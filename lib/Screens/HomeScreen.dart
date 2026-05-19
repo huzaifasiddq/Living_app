@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Background image
           Image.asset(
-            'assets/images/home_bg.jpg',
+            'assets/images/login_bg.jpg',
             fit: BoxFit.cover,
           ),
           // Gradient overlay

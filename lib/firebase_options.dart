@@ -71,4 +71,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'ecosphere-43c82.firebasestorage.app',
     iosBundleId: 'com.example.myApp',
   );
+
 }

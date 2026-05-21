@@ -1,30 +1,10 @@
 import 'dart:ui';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-void main() {
-  runApp(const SustainableLivingApp());
-}
-
-class SustainableLivingApp extends StatelessWidget {
-  const SustainableLivingApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sustainable Living Guide',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32),
-          brightness: Brightness.light,
-        ),
-      ),
-      home: const LoginScreen(),
-    );
-  }
-}
+import 'package:my_app/Screens/HomeScreen.dart';
+import 'package:my_app/Screens/SignupScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,13 +15,18 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController =
+      TextEditingController();
+
+  final TextEditingController _passwordController =
+      TextEditingController();
+
   bool _obscurePassword = true;
   bool _isLoading = false;
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
+
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _cardFadeAnimation;
@@ -60,42 +45,124 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _fadeController,
+        curve: Curves.easeOut,
+      ),
     );
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
-    );
-
-    _cardFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(
       CurvedAnimation(
         parent: _slideController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _cardFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _slideController,
+        curve: const Interval(
+          0.2,
+          1.0,
+          curve: Curves.easeOut,
+        ),
       ),
     );
 
     _fadeController.forward();
-    Future.delayed(const Duration(milliseconds: 200), () {
-      _slideController.forward();
-    });
+
+    Future.delayed(
+      const Duration(milliseconds: 200),
+      () {
+        _slideController.forward();
+      },
+    );
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+
     _fadeController.dispose();
     _slideController.dispose();
+
     super.dispose();
   }
 
+  // ───────────────── LOGIN FUNCTION ─────────────────
+
   void _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter email and password',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (mounted) setState(() => _isLoading = false);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomeScreen(),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = 'Login failed';
+
+      if (e.code == 'user-not-found') {
+        message = 'No user found with this email';
+      } else if (e.code == 'wrong-password') {
+        message = 'Incorrect password';
+      } else if (e.code == 'invalid-email') {
+        message = 'Invalid email address';
+      } else if (e.code == 'invalid-credential') {
+        message = 'Invalid email or password';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong'),
+        ),
+      );
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
+
+  // ─────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -104,16 +171,13 @@ class _LoginScreenState extends State<LoginScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // ── Background image fills entire screen ──
           Positioned.fill(
             child: Image.asset(
               'assets/images/login_bg.jpg',
               fit: BoxFit.cover,
-              alignment: Alignment.center,
             ),
           ),
 
-          // ── Subtle green-tinted overlay ──
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -125,22 +189,23 @@ class _LoginScreenState extends State<LoginScreen>
                     const Color(0xFF33691E).withOpacity(0.28),
                     const Color(0xFF1A237E).withOpacity(0.10),
                   ],
-                  stops: const [0.0, 0.55, 1.0],
                 ),
               ),
             ),
           ),
 
-          // ── Main scrollable content ──
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: size.height - MediaQuery.of(context).padding.top),
+                constraints: BoxConstraints(
+                  minHeight: size.height,
+                ),
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      // ── Top branding section ──
+                      // ───────── TOP SECTION ─────────
+
                       FadeTransition(
                         opacity: _fadeAnimation,
                         child: Padding(
@@ -150,15 +215,15 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           child: Column(
                             children: [
-                              // Logo
                               Container(
-                                width: 70,
-                                height: 70,
+                                width: 72,
+                                height: 72,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.20),
+                                      color: Colors.black
+                                          .withOpacity(0.20),
                                       blurRadius: 18,
                                       offset: const Offset(0, 6),
                                     ),
@@ -171,9 +236,9 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                                 ),
                               ),
+
                               const SizedBox(height: 14),
 
-                              // App title
                               Text(
                                 'Sustainable\nLiving Guide',
                                 textAlign: TextAlign.center,
@@ -182,39 +247,18 @@ class _LoginScreenState extends State<LoginScreen>
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
                                   height: 1.15,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withOpacity(0.35),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
                                 ),
                               ),
+
                               const SizedBox(height: 8),
 
-                              // Subtitle
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Live Green, Live Better ',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white.withOpacity(0.92),
-                                      letterSpacing: 0.3,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withOpacity(0.30),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const Text('🌿', style: TextStyle(fontSize: 14)),
-                                ],
+                              Text(
+                                'Live Green, Live Better 🌿',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color:
+                                      Colors.white.withOpacity(0.92),
+                                ),
                               ),
                             ],
                           ),
@@ -223,276 +267,363 @@ class _LoginScreenState extends State<LoginScreen>
 
                       const Spacer(),
 
-                      // ── Glassmorphism login card ──
+                      // ───────── LOGIN CARD ─────────
+
                       SlideTransition(
                         position: _slideAnimation,
                         child: FadeTransition(
                           opacity: _cardFadeAnimation,
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                            padding: const EdgeInsets.fromLTRB(
+                              20,
+                              0,
+                              20,
+                              28,
+                            ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(28),
+                              borderRadius:
+                                  BorderRadius.circular(28),
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                                filter: ImageFilter.blur(
+                                  sigmaX: 30,
+                                  sigmaY: 30,
+                                ),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(28),
-                                    color: Colors.white.withOpacity(0.22),
+                                    borderRadius:
+                                        BorderRadius.circular(28),
+                                    color: Colors.white
+                                        .withOpacity(0.22),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.38),
+                                      color: Colors.white
+                                          .withOpacity(0.38),
                                       width: 1.2,
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.18),
-                                        blurRadius: 30,
-                                        spreadRadius: 2,
-                                        offset: const Offset(0, 10),
-                                      ),
-                                      BoxShadow(
-                                        color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.10),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
                                   ),
                                   child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                                    padding:
+                                        const EdgeInsets.fromLTRB(
+                                      24,
+                                      28,
+                                      24,
+                                      24,
+                                    ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        // Card heading
                                         Text(
                                           'Welcome Back',
-                                          style: GoogleFonts.poppins(
+                                          style:
+                                              GoogleFonts.poppins(
                                             fontSize: 24,
-                                            fontWeight: FontWeight.w700,
-                                            color: const Color(0xFF1B3A1F),
-                                            letterSpacing: -0.3,
+                                            fontWeight:
+                                                FontWeight.w700,
+                                            color: const Color(
+                                                0xFF1B3A1F),
                                           ),
                                         ),
+
                                         const SizedBox(height: 4),
+
                                         Text(
                                           'Login to continue your green journey',
-                                          style: GoogleFonts.poppins(
+                                          style:
+                                              GoogleFonts.poppins(
                                             fontSize: 13,
-                                            fontWeight: FontWeight.w400,
-                                            color: const Color(0xFF3A5C3F).withOpacity(0.85),
+                                            color: const Color(
+                                                    0xFF3A5C3F)
+                                                .withOpacity(0.85),
                                           ),
                                         ),
+
                                         const SizedBox(height: 24),
 
-                                        // Email field
+                                        // EMAIL
+
                                         _GlassInputField(
-                                          controller: _emailController,
+                                          controller:
+                                              _emailController,
                                           hint: 'Email Address',
-                                          prefixIcon: Icons.email_outlined,
-                                          keyboardType: TextInputType.emailAddress,
+                                          prefixIcon:
+                                              Icons.email_outlined,
+                                          keyboardType:
+                                              TextInputType
+                                                  .emailAddress,
                                         ),
+
                                         const SizedBox(height: 14),
 
-                                        // Password field
+                                        // PASSWORD
+
                                         _GlassInputField(
-                                          controller: _passwordController,
+                                          controller:
+                                              _passwordController,
                                           hint: 'Password',
-                                          prefixIcon: Icons.lock_outline_rounded,
-                                          obscureText: _obscurePassword,
+                                          prefixIcon: Icons
+                                              .lock_outline_rounded,
+                                          obscureText:
+                                              _obscurePassword,
                                           suffixIcon: IconButton(
                                             icon: Icon(
                                               _obscurePassword
-                                                  ? Icons.visibility_outlined
-                                                  : Icons.visibility_off_outlined,
-                                              color: const Color(0xFF5A8A5E),
-                                              size: 20,
+                                                  ? Icons
+                                                      .visibility_outlined
+                                                  : Icons
+                                                      .visibility_off_outlined,
+                                              color:
+                                                  const Color(
+                                                      0xFF5A8A5E),
                                             ),
-                                            onPressed: () => setState(
-                                                () => _obscurePassword = !_obscurePassword),
+                                            onPressed: () {
+                                              setState(() {
+                                                _obscurePassword =
+                                                    !_obscurePassword;
+                                              });
+                                            },
                                           ),
                                         ),
+
                                         const SizedBox(height: 10),
 
-                                        // Forgot password
                                         Align(
-                                          alignment: Alignment.centerRight,
+                                          alignment:
+                                              Alignment.centerRight,
                                           child: TextButton(
                                             onPressed: () {},
-                                            style: TextButton.styleFrom(
-                                              padding: EdgeInsets.zero,
-                                              minimumSize: Size.zero,
-                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                            ),
                                             child: Text(
                                               'Forgot Password?',
-                                              style: GoogleFonts.poppins(
+                                              style:
+                                                  GoogleFonts
+                                                      .poppins(
                                                 fontSize: 12.5,
-                                                fontWeight: FontWeight.w500,
-                                                color: const Color.fromARGB(255, 5, 36, 6),
+                                                color:
+                                                    const Color(
+                                                        0xFF0B3D0D),
                                               ),
                                             ),
                                           ),
                                         ),
+
                                         const SizedBox(height: 20),
 
-                                        // Login button
+                                        // LOGIN BUTTON
+
                                         SizedBox(
                                           width: double.infinity,
                                           height: 52,
                                           child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(14),
-                                              gradient: const LinearGradient(
+                                            decoration:
+                                                BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius
+                                                      .circular(
+                                                          14),
+                                              gradient:
+                                                  const LinearGradient(
                                                 colors: [
-                                                  Color(0xFF2E7D32),
-                                                  Color(0xFF43A047),
-                                                  Color(0xFF388E3C),
+                                                  Color(
+                                                      0xFF2E7D32),
+                                                  Color(
+                                                      0xFF43A047),
+                                                  Color(
+                                                      0xFF388E3C),
                                                 ],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
                                               ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: const Color(0xFF2E7D32).withOpacity(0.45),
-                                                  blurRadius: 16,
-                                                  spreadRadius: 0,
-                                                  offset: const Offset(0, 6),
-                                                ),
-                                              ],
                                             ),
                                             child: ElevatedButton(
-                                              onPressed: _isLoading ? null : _handleLogin,
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.transparent,
-                                                shadowColor: Colors.transparent,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(14),
-                                                ),
+                                              onPressed:
+                                                  _isLoading
+                                                      ? null
+                                                      : _handleLogin,
+                                              style:
+                                                  ElevatedButton
+                                                      .styleFrom(
+                                                backgroundColor:
+                                                    Colors
+                                                        .transparent,
+                                                shadowColor:
+                                                    Colors
+                                                        .transparent,
                                               ),
                                               child: _isLoading
                                                   ? const SizedBox(
                                                       width: 22,
                                                       height: 22,
-                                                      child: CircularProgressIndicator(
-                                                        color: Colors.white,
-                                                        strokeWidth: 2.5,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        color:
+                                                            Colors
+                                                                .white,
+                                                        strokeWidth:
+                                                            2.5,
                                                       ),
                                                     )
-                                                  : Row(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Text(
-                                                          'Login',
-                                                          style: GoogleFonts.poppins(
-                                                            fontSize: 16,
-                                                            fontWeight: FontWeight.w600,
-                                                            color: Colors.white,
-                                                            letterSpacing: 0.5,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(width: 8),
-                                                        const Text('🌿',
-                                                            style: TextStyle(fontSize: 16)),
-                                                      ],
+                                                  : Text(
+                                                      'Login',
+                                                      style:
+                                                          GoogleFonts
+                                                              .poppins(
+                                                        fontSize:
+                                                            16,
+                                                        fontWeight:
+                                                            FontWeight
+                                                                .w600,
+                                                        color: Colors
+                                                            .white,
+                                                      ),
                                                     ),
                                             ),
                                           ),
                                         ),
+
                                         const SizedBox(height: 22),
 
-                                        // Divider row
+                                        // DIVIDER
+
                                         Row(
                                           children: [
                                             Expanded(
                                               child: Divider(
-                                                color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.30),
-                                                thickness: 1,
+                                                color: Colors.white
+                                                    .withOpacity(
+                                                        0.30),
                                               ),
                                             ),
                                             Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                                              padding:
+                                                  const EdgeInsets
+                                                      .symmetric(
+                                                horizontal: 12,
+                                              ),
                                               child: Text(
-                                                'Or continue with',
-                                                style: GoogleFonts.poppins(
+                                                'Continue with Google',
+                                                style:
+                                                    GoogleFonts
+                                                        .poppins(
                                                   fontSize: 12,
-                                                  color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.75),
-                                                  fontWeight: FontWeight.w400,
+                                                  color: Colors
+                                                      .white
+                                                      .withOpacity(
+                                                          0.80),
                                                 ),
                                               ),
                                             ),
                                             Expanded(
                                               child: Divider(
-                                                color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.30),
-                                                thickness: 1,
+                                                color: Colors.white
+                                                    .withOpacity(
+                                                        0.30),
                                               ),
                                             ),
                                           ],
                                         ),
+
                                         const SizedBox(height: 20),
 
-                                        // Social login icons
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            _SocialLoginButton(
-                                              onTap: () {},
-                                              child: Image.network(
-                                                'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png',
-                                                width: 22,
-                                                height: 22,
-                                                errorBuilder: (_, __, ___) => const Icon(
-                                                  Icons.g_mobiledata_rounded,
-                                                  size: 24,
-                                                  color: Color(0xFFEA4335),
+                                        // GOOGLE BUTTON ONLY
+
+                                        Center(
+                                          child:
+                                              _SocialLoginButton(
+                                            onTap: () {},
+                                            child:
+                                                Image.network(
+                                              'https://cdn-icons-png.flaticon.com/512/300/300221.png',
+                                              width: 24,
+                                              height: 24,
+                                              fit: BoxFit.contain,
+                                              loadingBuilder:
+                                                  (
+                                                context,
+                                                child,
+                                                loadingProgress,
+                                              ) {
+                                                if (loadingProgress ==
+                                                    null) {
+                                                  return child;
+                                                }
+
+                                                return const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth:
+                                                        2,
+                                                  ),
+                                                );
+                                              },
+                                              errorBuilder:
+                                                  (
+                                                _,
+                                                __,
+                                                ___,
+                                              ) {
+                                                return const Icon(
+                                                  Icons
+                                                      .g_mobiledata_rounded,
+                                                  size: 28,
+                                                  color: Color(
+                                                      0xFFEA4335),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 20),
+
+                                        // SIGNUP
+
+                                        Center(
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment
+                                                    .center,
+                                            children: [
+                                              Text(
+                                                "Don't have an account? ",
+                                                style:
+                                                    GoogleFonts
+                                                        .poppins(
+                                                  fontSize: 13,
+                                                  color: Colors
+                                                      .white
+                                                      .withOpacity(
+                                                          0.85),
                                                 ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            _SocialLoginButton(
-                                              onTap: () {},
-                                              child: const Icon(
-                                                Icons.apple_rounded,
-                                                size: 24,
-                                                color: Color(0xFF1C1C1E),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            _SocialLoginButton(
-                                              onTap: () {},
-                                              child: const Icon(
-                                                Icons.facebook_rounded,
-                                                size: 24,
-                                                color: Color(0xFF1877F2),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-
-                                        // Sign up text
-                                        Center(
-                                          child: RichText(
-                                            text: TextSpan(
-                                              text: "Don't have an account? ",
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 13,
-                                                color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.85),
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                              children: [
-                                                WidgetSpan(
-                                                  child: GestureDetector(
-                                                    onTap: () {},
-                                                    child: Text(
-                                                      'Sign Up',
-                                                      style: GoogleFonts.poppins(
-                                                        fontSize: 13,
-                                                        color: const Color.fromARGB(255, 172, 241, 93),
-                                                        fontWeight: FontWeight.w600,
-                                                      ),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder:
+                                                          (
+                                                            context,
+                                                          ) =>
+                                                              const SignupScreen(),
                                                     ),
+                                                  );
+                                                },
+                                                child: Text(
+                                                  'Sign Up',
+                                                  style:
+                                                      GoogleFonts
+                                                          .poppins(
+                                                    fontSize:
+                                                        13,
+                                                    color:
+                                                        const Color(
+                                                            0xFFACF15D),
+                                                    fontWeight:
+                                                        FontWeight
+                                                            .w600,
                                                   ),
                                                 ),
-                                              ],
-                                            ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
@@ -516,7 +647,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-// ── Reusable glass-style input field ──────────────────────────────────────────
+// ───────────────── INPUT FIELD ─────────────────
 
 class _GlassInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -540,22 +671,17 @@ class _GlassInputField extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        filter: ImageFilter.blur(
+          sigmaX: 6,
+          sigmaY: 6,
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.42),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: Colors.white.withOpacity(0.55),
-              width: 1.0,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
           ),
           child: TextField(
             controller: controller,
@@ -564,14 +690,13 @@ class _GlassInputField extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: const Color(0xFF1B3A1F),
-              fontWeight: FontWeight.w400,
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.poppins(
                 fontSize: 14,
-                color: const Color(0xFF5A8A5E).withOpacity(0.80),
-                fontWeight: FontWeight.w400,
+                color: const Color(0xFF5A8A5E)
+                    .withOpacity(0.80),
               ),
               prefixIcon: Icon(
                 prefixIcon,
@@ -580,7 +705,8 @@ class _GlassInputField extends StatelessWidget {
               ),
               suffixIcon: suffixIcon,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
+              contentPadding:
+                  const EdgeInsets.symmetric(
                 vertical: 15,
                 horizontal: 8,
               ),
@@ -592,7 +718,7 @@ class _GlassInputField extends StatelessWidget {
   }
 }
 
-// ── Social login circular button ──────────────────────────────────────────────
+// ───────────────── GOOGLE BUTTON ─────────────────
 
 class _SocialLoginButton extends StatelessWidget {
   final Widget child;
@@ -610,10 +736,13 @@ class _SocialLoginButton extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(50),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+          filter: ImageFilter.blur(
+            sigmaX: 4,
+            sigmaY: 4,
+          ),
           child: Container(
-            width: 52,
-            height: 52,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.72),
               shape: BoxShape.circle,
@@ -621,15 +750,10 @@ class _SocialLoginButton extends StatelessWidget {
                 color: Colors.white.withOpacity(0.70),
                 width: 1.2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.10),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
-            child: Center(child: child),
+            child: Center(
+              child: child,
+            ),
           ),
         ),
       ),

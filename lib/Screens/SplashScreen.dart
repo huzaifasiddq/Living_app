@@ -120,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen>
     _exitAnim =
         CurvedAnimation(parent: _exitCtrl, curve: Curves.easeIn);
 
-    Future.delayed(const Duration(milliseconds: 3000), () async {
+    Future.delayed(const Duration(seconds: 5), () async {
       if (!mounted) return;
       await _exitCtrl.forward();
       if (!mounted) return;

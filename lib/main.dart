@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/Screens/LoginScreen.dart';
+import 'package:my_app/Screens/ProfileScreen.dart';
 import 'package:my_app/Screens/SplashScreen.dart';
 
 import 'firebase_options.dart';
@@ -36,6 +37,7 @@ class EatcnobityApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         "/Login": (context) => const LoginScreen(),
+        "/Profile": (context) => const ProfileScreen(),
       },
     );
   }

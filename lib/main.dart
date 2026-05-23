@@ -2,6 +2,7 @@ import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/MainScreen.dart';
 import 'package:my_app/Screens/LoginScreen.dart';
 import 'package:my_app/Screens/ProfileScreen.dart';
 import 'package:my_app/Screens/SplashScreen.dart';

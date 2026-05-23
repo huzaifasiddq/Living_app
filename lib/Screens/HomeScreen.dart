@@ -1,222 +1,265 @@
 import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:my_app/Screens/ProfileScreen.dart';
 
-void main() {
-  runApp(const EcoApp());
-}
-
-class EcoApp extends StatelessWidget {
-  const EcoApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Eco Dashboard',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
-        textTheme: GoogleFonts.poppinsTextTheme(),
-      ),
-      home: const HomeScreen(),
-    );
-  }
-}
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  static const String bgImage = 'assets/images/home_bg.jpg';
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+  static const String defaultProfile =
+      'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+
+  static const List<_ExploreItem> exploreItems = [
+    _ExploreItem(
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=600&q=80',
+      'Eco Products',
+      '120+ Items',
+    ),
+    _ExploreItem(
+      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80',
+      'Sustainable\nRecipes',
+      '80+ Recipes',
+    ),
+    _ExploreItem(
+      'https://images.unsplash.com/photo-1527525443983-6e60c75fff46?auto=format&fit=crop&w=600&q=80',
+      'Green\nChallenges',
+      '12 Active',
+    ),
+    _ExploreItem(
+      'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?auto=format&fit=crop&w=600&q=80',
+      'Community\nForum',
+      '4.8K Members',
+    ),
+  ];
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? get _userStream {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final stream = _userStream;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F8F1),
-      extendBody: true,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(stream),
             _buildMainCard(),
-            const SizedBox(height: 100),
+            const SizedBox(height: 115),
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: _buildFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  Widget _buildHeader() {
-  final user = FirebaseAuth.instance.currentUser;
+  Widget _buildHeader(Stream<DocumentSnapshot<Map<String, dynamic>>>? stream) {
+    if (stream == null) {
+      return _headerUI(userName: 'Guest User', photoUrl: null);
+    }
 
-  if (user == null) {
-    return const SizedBox();
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: stream,
+      builder: (context, snapshot) {
+        String userName = 'User';
+        String? photoUrl;
+
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data();
+
+          userName = data?['fullName'] ?? data?['name'] ?? 'User';
+
+          photoUrl = data?['profileImage'];
+        }
+
+        return _headerUI(userName: userName, photoUrl: photoUrl);
+      },
+    );
   }
 
-  return StreamBuilder<DocumentSnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .snapshots(),
-    builder: (context, snapshot) {
-      String userName = 'User';
-      String? photoUrl;
+  Widget _headerUI({required String userName, required String? photoUrl}) {
+    return SizedBox(
+      height: 360,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            bgImage,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) {
+              return Container(color: const Color(0xFF1B5E20));
+            },
+          ),
 
-      if (snapshot.hasData && snapshot.data!.exists) {
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-
-        userName = data['fullName'] ?? 'User';
-        photoUrl = data['photoURL'];
-      }
-
-      return SizedBox(
-        height: 260,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/images/login_bg.jpg',
-              fit: BoxFit.cover,
-            ),
-
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF1B5E20).withOpacity(0.55),
-                    const Color(0xFF2E7D32).withOpacity(0.30),
-                    Colors.transparent,
-                  ],
-                ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF0B3D1E).withOpacity(0.78),
+                  const Color(0xFF2E7D32).withOpacity(0.45),
+                  const Color(0xFF66BB6A).withOpacity(0.18),
+                ],
               ),
             ),
+          ),
 
-            SafeArea(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.5),
-                      ),
-                      child: ClipOval(
-                        child: photoUrl != null && photoUrl.isNotEmpty
-                            ? Image.network(
-                                photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) {
-                                  return Image.asset(
-                                    'assets/images/profile.jpg',
-                                    fit: BoxFit.cover,
-                                  );
-                                },
-                              )
-                            : Image.asset(
-                                'assets/images/profile.jpg',
-                                fit: BoxFit.cover,
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      _ProfileAvatar(photoUrl: photoUrl),
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _greetingText(),
+                              style: GoogleFonts.poppins(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 13,
                               ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Good Morning,',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white.withOpacity(0.88),
-                              fontSize: 13,
                             ),
-                          ),
-
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  userName,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    userName,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontSize: 21,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 5),
-                              const Text('🌿', style: TextStyle(fontSize: 16)),
-                            ],
-                          ),
-
-                          Text(
-                            'Small steps, big impact.',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white.withOpacity(0.80),
-                              fontSize: 11.5,
-                              fontStyle: FontStyle.italic,
+                                const SizedBox(width: 5),
+                                const Text('🌿'),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                            Text(
+                              'Small steps, big impact.',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white.withOpacity(0.82),
+                                fontSize: 11.5,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.white,
-                        size: 20,
+
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                          size: 21,
+                        ),
                       ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.25)),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      children: [
+                        _miniStat('🌱', 'Eco Score', '840'),
+                        _divider(),
+                        _miniStat('⭐', 'Points', '1.2K'),
+                        _divider(),
+                        _miniStat('🔥', 'Streak', '12 Days'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      );
-    },
-  );
-}
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _greetingText() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning,';
+    if (hour < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
+  }
+
+  Widget _divider() {
+    return Container(
+      width: 1,
+      height: 36,
+      color: Colors.white.withOpacity(0.25),
+    );
+  }
+
+  Widget _miniStat(String emoji, String title, String value) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              color: Colors.white.withOpacity(0.75),
+              fontSize: 9.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildMainCard() {
     return Transform.translate(
-      offset: const Offset(0, -28),
+      offset: const Offset(0, -95),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 0),
         decoration: BoxDecoration(
           color: const Color(0xFFF5FAF5),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF2E7D32).withOpacity(0.10),
@@ -226,7 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
           child: Column(
             children: [
               _buildImpactSection(),
@@ -245,34 +288,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _sectionTitle(String emoji, String title) {
+    return Row(
+      children: [
+        Container(
+          width: 29,
+          height: 29,
+          decoration: const BoxDecoration(
+            color: Color(0xFFE8F5E9),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(emoji, style: const TextStyle(fontSize: 14)),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF1B5E20),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildImpactSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Text('🌿', style: TextStyle(fontSize: 14)),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Your Impact Today',
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1B5E20),
-              ),
-            ),
-          ],
-        ),
+        _sectionTitle('🌿', 'Your Impact Today'),
         const SizedBox(height: 14),
         Row(
           children: [
@@ -284,7 +331,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 unit: 'CO₂ today',
                 progress: 0.72,
                 change: '↓ 18% vs yesterday',
-                isPositive: true,
                 color: const Color(0xFF2E7D32),
               ),
             ),
@@ -297,7 +343,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 unit: 'From landfill',
                 progress: 0.45,
                 change: '↑ 12% vs yesterday',
-                isPositive: true,
                 color: const Color(0xFF00897B),
               ),
             ),
@@ -314,29 +359,19 @@ class _HomeScreenState extends State<HomeScreen> {
     required String unit,
     required double progress,
     required String change,
-    required bool isPositive,
     required Color color,
   }) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.10),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: _whiteCardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
+            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
-              fontSize: 11,
+              fontSize: 10.5,
               fontWeight: FontWeight.w600,
               color: Colors.grey[600],
             ),
@@ -351,16 +386,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       value,
                       style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
                         color: const Color(0xFF1B5E20),
-                        letterSpacing: -0.5,
                       ),
                     ),
                     Text(
                       unit,
                       style: GoogleFonts.poppins(
-                        fontSize: 10,
+                        fontSize: 9.5,
                         color: Colors.grey[500],
                       ),
                     ),
@@ -381,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 9),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
@@ -391,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               change,
               style: GoogleFonts.poppins(
-                fontSize: 9.5,
+                fontSize: 9,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF2E7D32),
               ),
@@ -405,40 +439,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDailyGoalSection() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2E7D32).withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: _whiteCardDecoration(),
       child: Column(
         children: [
           Row(
             children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(child: Text('🎯', style: TextStyle(fontSize: 13))),
-              ),
+              _sectionIcon('🎯'),
               const SizedBox(width: 8),
-              Text(
-                'Daily Goal Progress',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1B5E20),
+              Expanded(
+                child: Text(
+                  'Daily Goal Progress',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1B5E20),
+                  ),
                 ),
               ),
-              const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -446,24 +463,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '75% Completed',
+                  '75%',
                   style: GoogleFonts.poppins(
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xFF2E7D32),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 13),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
+            child: const LinearProgressIndicator(
               value: 0.75,
               minHeight: 8,
-              backgroundColor: const Color(0xFFE8F5E9),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
+              backgroundColor: Color(0xFFE8F5E9),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
             ),
           ),
           const SizedBox(height: 16),
@@ -473,11 +490,37 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildGoalItem('🌿', 'Low Carbon', true),
               _buildGoalItem('🛍️', 'No Plastic', true),
               _buildGoalItem('💧', 'Save Water', true),
-              _buildGoalItem('⚡', 'Green Energy', false),
+              _buildGoalItem('⚡', 'Energy', false),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  BoxDecoration _whiteCardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(19),
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFF2E7D32).withOpacity(0.08),
+          blurRadius: 13,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionIcon(String emoji) {
+    return Container(
+      width: 27,
+      height: 27,
+      decoration: const BoxDecoration(
+        color: Color(0xFFE8F5E9),
+        shape: BoxShape.circle,
+      ),
+      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 13))),
     );
   }
 
@@ -506,21 +549,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             if (completed)
-              Positioned(
+              const Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF43A047),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 10,
-                  ),
+                child: CircleAvatar(
+                  radius: 8,
+                  backgroundColor: Color(0xFF43A047),
+                  child: Icon(Icons.check, color: Colors.white, size: 10),
                 ),
               ),
           ],
@@ -532,11 +567,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label,
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              fontSize: 10,
+              fontSize: 9.5,
               fontWeight: FontWeight.w500,
-              color: completed
-                  ? const Color(0xFF2E7D32)
-                  : Colors.grey[500],
+              color: completed ? const Color(0xFF2E7D32) : Colors.grey[500],
             ),
           ),
         ),
@@ -545,58 +578,39 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildExploreSection() {
-    final items = [
-      _ExploreItem('assets/images/product.jpg', 'Eco Products', '120+ Items'),
-      _ExploreItem('assets/images/recipe.jpg', 'Sustainable\nRecipes', '80+ Recipes'),
-      _ExploreItem('assets/images/challenge.jpg', 'Green\nChallenges', '12 Active'),
-      _ExploreItem('assets/images/community.jpg', 'Community\nForum', '4.8K Members'),
-    ];
-
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Explore',
               style: GoogleFonts.poppins(
                 fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 color: const Color(0xFF1B5E20),
               ),
             ),
-            GestureDetector(
-              child: Row(
-                children: [
-                  Text(
-                    'View All',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF43A047),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color(0xFF43A047),
-                    size: 16,
-                  ),
-                ],
+            const Spacer(),
+            Text(
+              'View All',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF43A047),
               ),
             ),
+            const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
           ],
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 130,
+          height: 132,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: items.length,
+            itemCount: exploreItems.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _buildExploreCard(item);
-            },
+            itemBuilder: (context, index) =>
+                _buildExploreCard(exploreItems[index]),
           ),
         ),
       ],
@@ -605,32 +619,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildExploreCard(_ExploreItem item) {
     return Container(
-      width: 110,
+      width: 112,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(17),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.10),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            blurRadius: 9,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(17),
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(item.imagePath, fit: BoxFit.cover),
+            Image.network(
+              item.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) {
+                return Container(color: const Color(0xFF2E7D32));
+              },
+            ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.68)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.65),
-                  ],
                 ),
               ),
             ),
@@ -645,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     item.title,
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
                       height: 1.2,
                     ),
@@ -672,96 +689,48 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [Color(0xFF388E3C), Color(0xFF66BB6A)],
+          colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
         ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2E7D32).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.20),
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Text('🌱', style: TextStyle(fontSize: 22)),
-            ),
+          const CircleAvatar(
+            radius: 23,
+            backgroundColor: Color(0x33FFFFFF),
+            child: Text('🌱', style: TextStyle(fontSize: 22)),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Today's Eco Tip",
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Use a reusable water bottle.\nSmall choice, big change.',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: Colors.white.withOpacity(0.90),
-                    height: 1.4,
-                  ),
-                ),
-              ],
+            child: Text(
+              "Use a reusable water bottle.\nSmall choice, big change.",
+              style: GoogleFonts.poppins(
+                fontSize: 11.5,
+                color: Colors.white,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.22),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.35),
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '+25',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const Text('⭐', style: TextStyle(fontSize: 10)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Eco Points',
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              color: Color(0x33FFFFFF),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '+25\n⭐',
+                textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
-                  fontSize: 9,
-                  color: Colors.white.withOpacity(0.85),
-                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.1,
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -772,51 +741,31 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Recent Activity',
               style: GoogleFonts.poppins(
                 fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 color: const Color(0xFF1B5E20),
               ),
             ),
-            GestureDetector(
-              child: Row(
-                children: [
-                  Text(
-                    'View All',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF43A047),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color(0xFF43A047),
-                    size: 16,
-                  ),
-                ],
+            const Spacer(),
+            Text(
+              'View All',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF43A047),
               ),
             ),
+            const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
           ],
         ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2E7D32).withOpacity(0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+          decoration: _whiteCardDecoration(),
           child: Row(
             children: [
               Container(
@@ -824,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 50,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Center(
                   child: Text('🌳', style: TextStyle(fontSize: 24)),
@@ -832,30 +781,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'You planted a tree',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1B5E20),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '2 hours ago',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'You planted a tree\n2 hours ago',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1B5E20),
+                    height: 1.4,
+                  ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(12),
@@ -864,7 +804,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   '+50\nPoints',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF2E7D32),
                     height: 1.2,
@@ -877,112 +817,39 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
 
-  Widget _buildFAB() {
+class _ProfileAvatar extends StatelessWidget {
+  final String? photoUrl;
+
+  const _ProfileAvatar({required this.photoUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.trim().isNotEmpty;
+
     return Container(
-      width: 58,
-      height: 58,
+      width: 54,
+      height: 54,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF43A047), Color(0xFF1B5E20)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2E7D32).withOpacity(0.40),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        border: Border.all(color: Colors.white, width: 2.5),
       ),
-      child: const Icon(Icons.add, color: Colors.white, size: 28),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home_rounded, 'Home', 0),
-              _buildNavItem(Icons.bar_chart_rounded, 'Tracker', 1),
-              const SizedBox(width: 58),
-              _buildNavItem(Icons.people_rounded, 'Community', 3),
-              _buildNavItem(Icons.person_rounded, 'Profile', 4),
-            ],
-          ),
+      child: ClipOval(
+        child: Image.network(
+          hasPhoto ? photoUrl! : HomeScreen.defaultProfile,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) {
+            return Container(
+              color: const Color(0xFFE8F5E9),
+              child: const Icon(Icons.person, color: Color(0xFF2E7D32)),
+            );
+          },
         ),
       ),
     );
   }
-
-  Widget _buildNavItem(IconData icon, String label, int index) {
-  final isSelected = _selectedIndex == index;
-
-  return GestureDetector(
-    onTap: () {
-      setState(() {
-        _selectedIndex = index;
-      });
-
-      // Profile Screen Open
-      if (index == 4) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ProfileScreen(),
-          ),
-        );
-      }
-    },
-
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isSelected
-              ? const Color(0xFF2E7D32)
-              : Colors.grey[400],
-          size: 24,
-        ),
-
-        const SizedBox(height: 2),
-
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            fontWeight:
-                isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected
-                ? const Color(0xFF2E7D32)
-                : Colors.grey[400],
-          ),
-        ),
-      ],
-    ),
-  );
 }
-}
-
-// ── Circular progress painter ──────────────────────────────────────────────────
 
 class CircularProgressPainter extends CustomPainter {
   final double progress;
@@ -1025,7 +892,6 @@ class CircularProgressPainter extends CustomPainter {
       fgPaint,
     );
 
-    // Draw emoji in center
     final textPainter = TextPainter(
       text: TextSpan(
         text: icon,
@@ -1033,7 +899,9 @@ class CircularProgressPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     );
+
     textPainter.layout();
+
     textPainter.paint(
       canvas,
       Offset(
@@ -1047,12 +915,10 @@ class CircularProgressPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// ── Data model ─────────────────────────────────────────────────────────────────
-
 class _ExploreItem {
-  final String imagePath;
+  final String imageUrl;
   final String title;
   final String subtitle;
 
-  const _ExploreItem(this.imagePath, this.title, this.subtitle);
+  const _ExploreItem(this.imageUrl, this.title, this.subtitle);
 }

@@ -1,791 +1,701 @@
-// profile_screen.dart
-// EcoSphere - Premium Eco Lifestyle App
-// Single-file Flutter profile screen with Firebase integration
-
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
 // ─────────────────────────────────────────────
-//  MODELS
+//  CLOUDINARY CONFIG
+//  Cloudinary Dashboard se apna cloud name aur unsigned upload preset yahan lagao.
 // ─────────────────────────────────────────────
-
-class UserProfile {
-  final String fullName;
-  final String username;
-  final String location;
-  final String profileImageUrl;
-  final String ecoLevel;
-  final String badgeTitle;
-  final double sustainabilityScore;
-  final double improvementPercent;
-  final double carbonFootprint;
-  final double wasteReduced;
-  final double wasteProgress;
-  final int ecoPoints;
-  final String rankText;
-
-  const UserProfile({
-    required this.fullName,
-    required this.username,
-    required this.location,
-    required this.profileImageUrl,
-    required this.ecoLevel,
-    required this.badgeTitle,
-    required this.sustainabilityScore,
-    required this.improvementPercent,
-    required this.carbonFootprint,
-    required this.wasteReduced,
-    required this.wasteProgress,
-    required this.ecoPoints,
-    required this.rankText,
-  });
-
-  factory UserProfile.fromMap(Map<String, dynamic> map) => UserProfile(
-        fullName: map['fullName'] ?? 'Eco User',
-        username: map['username'] ?? '@ecosphere',
-        location: map['location'] ?? 'Earth',
-        profileImageUrl: map['profileImageUrl'] ?? '',
-        ecoLevel: map['ecoLevel'] ?? 'Level 1',
-        badgeTitle: map['badgeTitle'] ?? 'Eco Warrior',
-        sustainabilityScore: (map['sustainabilityScore'] ?? 0).toDouble(),
-        improvementPercent: (map['improvementPercent'] ?? 0).toDouble(),
-        carbonFootprint: (map['carbonFootprint'] ?? 0).toDouble(),
-        wasteReduced: (map['wasteReduced'] ?? 0).toDouble(),
-        wasteProgress: (map['wasteProgress'] ?? 0.0).toDouble(),
-        ecoPoints: (map['ecoPoints'] ?? 0).toInt(),
-        rankText: map['rankText'] ?? 'Top 10%',
-      );
-}
-
-class Challenge {
-  final String title;
-  final String subtitle;
-  final String status;
-  final String icon;
-
-  const Challenge({
-    required this.title,
-    required this.subtitle,
-    required this.status,
-    required this.icon,
-  });
-
-  factory Challenge.fromMap(Map<String, dynamic> map) => Challenge(
-        title: map['title'] ?? '',
-        subtitle: map['subtitle'] ?? '',
-        status: map['status'] ?? 'completed',
-        icon: map['icon'] ?? '🌿',
-      );
-}
-
-class Achievement {
-  final String title;
-  final String subtitle;
-  final String image;
-
-  const Achievement({
-    required this.title,
-    required this.subtitle,
-    required this.image,
-  });
-
-  factory Achievement.fromMap(Map<String, dynamic> map) => Achievement(
-        title: map['title'] ?? '',
-        subtitle: map['subtitle'] ?? '',
-        image: map['image'] ?? '',
-      );
-}
+const String kCloudinaryCloudName = 'dsufgen5z';
+const String kCloudinaryUploadPreset = 'ecoaphere';
+const String kCloudinaryFolder = 'eco_profile_images';
 
 // ─────────────────────────────────────────────
-//  THEME CONSTANTS
+//  ECO PROFILE SCREEN
 // ─────────────────────────────────────────────
-
-class EcoTheme {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryLight = Color(0xFF43A047);
-  static const Color primaryLighter = Color(0xFF66BB6A);
-  static const Color accent = Color(0xFF00C853);
-  static const Color accentSoft = Color(0xFFB9F6CA);
-  static const Color surface = Colors.white;
-  static const Color background = Color(0xFFF1F8E9);
-  static const Color textDark = Color(0xFF1B2E1C);
-  static const Color textMedium = Color(0xFF4A6741);
-  static const Color textLight = Color(0xFF7A9B78);
-  static const Color cardShadow = Color(0x1A2E7D32);
-  static const Color glassBg = Color(0xCCFFFFFF);
-
-  static LinearGradient headerGradient = const LinearGradient(
-    colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF388E3C)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static LinearGradient scoreGradient = const LinearGradient(
-    colors: [Color(0xFF2E7D32), Color(0xFF00C853)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static TextStyle poppins({
-    double size = 14,
-    FontWeight weight = FontWeight.w400,
-    Color color = textDark,
-    double? height,
-    double? letterSpacing,
-  }) =>
-      GoogleFonts.poppins(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        height: height,
-        letterSpacing: letterSpacing,
-      );
-}
-
-// ─────────────────────────────────────────────
-//  MAIN PROFILE SCREEN
-// ─────────────────────────────────────────────
-
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
+        return _EcoProfileView(uid: uid, data: data);
+      },
+    );
+  }
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
-    with TickerProviderStateMixin {
-  int _navIndex = 4;
-  late AnimationController _fadeCtrl;
-  late Animation<double> _fadeAnim;
+// ─────────────────────────────────────────────
+//  MAIN VIEW
+// ─────────────────────────────────────────────
+class _EcoProfileView extends StatelessWidget {
+  const _EcoProfileView({required this.uid, required this.data});
 
-  @override
-  void initState() {
-    super.initState();
-    _fadeCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _fadeCtrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _fadeCtrl.dispose();
-    super.dispose();
-  }
-
-  String get _uid => FirebaseAuth.instance.currentUser?.uid ?? '';
-
-  Stream<DocumentSnapshot<Map<String, dynamic>>> get _userStream =>
-      FirebaseFirestore.instance.collection('users').doc(_uid).snapshots();
-
-  Stream<QuerySnapshot<Map<String, dynamic>>> get _challengesStream =>
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(_uid)
-          .collection('completedChallenges')
-          .snapshots();
-
-  Stream<QuerySnapshot<Map<String, dynamic>>> get _achievementsStream =>
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(_uid)
-          .collection('achievements')
-          .snapshots();
-
-  Future<void> _logout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Sign Out', style: EcoTheme.poppins(weight: FontWeight.w600)),
-        content: Text('Are you sure you want to sign out?',
-            style: EcoTheme.poppins(color: EcoTheme.textMedium)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel',
-                style: EcoTheme.poppins(color: EcoTheme.textLight)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: EcoTheme.primary,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Sign Out',
-                style: EcoTheme.poppins(
-                    color: Colors.white, weight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) await FirebaseAuth.instance.signOut();
-  }
-
-  void _openEditProfile(UserProfile profile) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _EditProfileSheet(
-        profile: profile,
-        uid: _uid,
-      ),
-    );
-  }
+  final String uid;
+  final Map<String, dynamic> data;
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: EcoTheme.background,
-        extendBody: true,
-        body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: _userStream,
-          builder: (ctx, userSnap) {
-            final profile = userSnap.hasData && userSnap.data!.exists
-                ? UserProfile.fromMap(userSnap.data!.data()!)
-                : null;
+    return Scaffold(
+      backgroundColor: const Color(0xFFF0F7F0),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ──
+              _HeaderSection(uid: uid, data: data),
+              const SizedBox(height: 20),
 
-            return FadeTransition(
-              opacity: _fadeAnim,
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // ── HEADER ──
-                  SliverToBoxAdapter(
-                    child: _ProfileHeader(
-                      profile: profile,
-                      onEditTap: profile != null
-                          ? () => _openEditProfile(profile)
-                          : null,
+              // ── Sustainability Score ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _SustainabilityCard(data: data),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Impact ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _ImpactSection(data: data),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Waste Reduction Progress ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _WasteReductionCard(data: data),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Challenges ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _ChallengesSection(uid: uid),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Achievements ──
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: _AchievementsSection(uid: uid),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  HEADER SECTION
+// ─────────────────────────────────────────────
+class _HeaderSection extends StatelessWidget {
+  const _HeaderSection({required this.uid, required this.data});
+
+  final String uid;
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final profileImage = data['profileImage'] as String?;
+    final fullName = data['fullName'] as String? ?? 'Eco User';
+    final email = data['email'] as String? ?? '';
+    final ecoTitle = data['ecoTitle'] as String? ?? 'Eco Warrior';
+
+    return SizedBox(
+      height: 240,
+      child: Stack(
+        children: [
+          // Background image
+          Positioned.fill(
+            child: ClipRRect(
+              child: Image.asset(
+                'assets/images/profile_bg.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF2D6A4F), Color(0xFF52B788), Color(0xFF95D5B2)],
                     ),
                   ),
+                ),
+              ),
+            ),
+          ),
 
-                  // ── MAIN CONTENT ──
-                  SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 0),
-                      decoration: const BoxDecoration(
-                        color: EcoTheme.background,
-                      ),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 16),
+          // Frosted overlay
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+              child: Container(color: Colors.black.withOpacity(0.08)),
+            ),
+          ),
 
-                          // Sustainability Score
-                          _SectionPadding(
-                            child: _SustainabilityCard(profile: profile),
+          // Decorative leaf circles
+          Positioned(top: -30, right: -30, child: _LeafCircle(size: 120, opacity: 0.15)),
+          Positioned(bottom: -20, left: -20, child: _LeafCircle(size: 90, opacity: 0.12)),
+
+          // Back button
+          Positioned(
+            top: 12,
+            left: 12,
+            child: _GlassButton(
+              icon: Icons.arrow_back_ios_new_rounded,
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+
+          // Settings button
+          Positioned(
+            top: 12,
+            right: 12,
+            child: _GlassButton(
+              icon: Icons.settings_outlined,
+              onTap: () {},
+            ),
+          ),
+
+          // Profile content
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
+                // Avatar
+                Stack(
+                  children: [
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Stats Row
-                          _SectionPadding(
-                            child: _StatsRow(profile: profile),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Completed Challenges
-                          _SectionPadding(
-                            child: _SectionHeader(title: 'Completed Challenges'),
-                          ),
-                          const SizedBox(height: 12),
-                          _ChallengesSection(stream: _challengesStream),
-
-                          const SizedBox(height: 20),
-
-                          // Achievements
-                          _SectionPadding(
-                            child: _SectionHeader(title: 'Achievements'),
-                          ),
-                          const SizedBox(height: 12),
-                          _AchievementsSection(stream: _achievementsStream),
-
-                          const SizedBox(height: 20),
-
-                          // Points & Rank
-                          if (profile != null)
-                            _SectionPadding(
-                              child: _PointsRankCard(profile: profile),
-                            ),
-
-                          const SizedBox(height: 20),
-
-                          // Logout
-                          _SectionPadding(
-                            child: _LogoutButton(onTap: _logout),
-                          ),
-
-                          const SizedBox(height: 100),
                         ],
                       ),
+                      child: ClipOval(
+                        child: profileImage != null && profileImage.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: profileImage,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => const _AvatarPlaceholder(),
+                                errorWidget: (_, __, ___) => const _AvatarPlaceholder(),
+                              )
+                            : const _AvatarPlaceholder(),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        bottomNavigationBar: _EcoBottomNav(
-          currentIndex: _navIndex,
-          onTap: (i) => setState(() => _navIndex = i),
-        ),
-      ),
-    );
-  }
-}
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF40916C),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.eco, color: Colors.white, size: 14),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
 
-// ─────────────────────────────────────────────
-//  HEADER
-// ─────────────────────────────────────────────
-
-class _ProfileHeader extends StatelessWidget {
-  final UserProfile? profile;
-  final VoidCallback? onEditTap;
-
-  const _ProfileHeader({required this.profile, this.onEditTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Background image + gradient overlay
-        ClipPath(
-          clipper: _HeaderClipper(),
-          child: Container(
-            height: 300,
-            width: double.infinity,
-            decoration: BoxDecoration(gradient: EcoTheme.headerGradient),
-            child: Stack(
-              children: [
-                // Background image
-                Positioned.fill(
-                  child: Image.asset(
-                    'assets/images/profile_bg.jpg',
-                    fit: BoxFit.cover,
-                    color: Colors.black.withOpacity(0.3),
-                    colorBlendMode: BlendMode.darken,
-                    errorBuilder: (_, __, ___) => const SizedBox(),
+                // Name
+                Text(
+                  fullName,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    shadows: [Shadow(color: Colors.black26, blurRadius: 4)],
                   ),
                 ),
-                // Decorative circles
-                Positioned(
-                  right: -40,
-                  top: -40,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.06),
+                const SizedBox(height: 2),
+
+                // Email + Edit Profile
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      email,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withOpacity(0.85),
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () => _openEditProfile(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Edit Profile',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.edit_outlined, color: Colors.white, size: 12),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  left: -20,
-                  bottom: 40,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.04),
-                    ),
+                const SizedBox(height: 8),
+
+                // Eco Warrior badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF40916C).withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.eco, color: Colors.white, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        ecoTitle,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
 
-        // Content
-        Positioned.fill(
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  // Top bar
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  void _openEditProfile(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditProfileSheet(uid: uid, data: data),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  GLASS BUTTON
+// ─────────────────────────────────────────────
+class _GlassButton extends StatelessWidget {
+  const _GlassButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  LEAF CIRCLE DECOR
+// ─────────────────────────────────────────────
+class _LeafCircle extends StatelessWidget {
+  const _LeafCircle({required this.size, required this.opacity});
+
+  final double size;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withOpacity(opacity), width: 2),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  AVATAR PLACEHOLDER
+// ─────────────────────────────────────────────
+class _AvatarPlaceholder extends StatelessWidget {
+  const _AvatarPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFF74C69D),
+      child: Image.asset(
+        'assets/images/default_profile.png',
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white, size: 40),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  SUSTAINABILITY CARD
+// ─────────────────────────────────────────────
+class _SustainabilityCard extends StatelessWidget {
+  const _SustainabilityCard({required this.data});
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final score = (data['sustainabilityScore'] as num?)?.toInt() ?? 2450;
+    final progress = (data['scoreProgress'] as num?)?.toDouble() ?? 0.85;
+
+    return Container(
+      height: 110,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2D6A4F), Color(0xFF40916C), Color(0xFF52B788)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF40916C).withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        image: const DecorationImage(
+          image: AssetImage('assets/images/profile_bg.jpg'),
+          fit: BoxFit.cover,
+          opacity: 0.08,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Decorative circles
+          Positioned(
+            right: 90,
+            top: -20,
+            child: _LeafCircle(size: 80, opacity: 0.1),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Sustainability Score',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white.withOpacity(0.85),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(Icons.info_outline, color: Colors.white.withOpacity(0.7), size: 14),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${score.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.trending_up, color: Color(0xFF95D5B2), size: 20),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
                       Text(
-                        'EcoSphere',
-                        style: EcoTheme.poppins(
-                          size: 22,
-                          weight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
+                        "You're in the top 15%\nKeep up the great work!",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.85),
+                          fontSize: 11,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Circular indicator
+                SizedBox(
+                  width: 70,
+                  height: 70,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 70,
+                        height: 70,
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 5,
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeCap: StrokeCap.round,
                         ),
                       ),
                       Container(
+                        width: 52,
+                        height: 52,
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
+                          shape: BoxShape.circle,
                         ),
-                        child: IconButton(
-                          icon: const Icon(Icons.settings_outlined,
-                              color: Colors.white, size: 22),
-                          onPressed: () {},
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Avatar
-                  _ProfileAvatar(imageUrl: profile?.profileImageUrl ?? ''),
-
-                  const SizedBox(height: 10),
-
-                  // Name
-                  Text(
-                    profile?.fullName ?? '—',
-                    style: EcoTheme.poppins(
-                      size: 20,
-                      weight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    profile?.username ?? '',
-                    style: EcoTheme.poppins(
-                      size: 13,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.location_on_outlined,
-                          color: Colors.white60, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        profile?.location ?? '',
-                        style: EcoTheme.poppins(
-                          size: 12,
-                          color: Colors.white60,
+                        child: Image.asset(
+                          'assets/images/leaf_icon.png',
+                          width: 28,
+                          height: 28,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.eco, color: Colors.white, size: 28),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+}
 
-        // Badge row – overlapping the curve
-        Positioned(
-          bottom: -28,
-          left: 20,
-          right: 20,
-          child: _BadgeRow(profile: profile, onEditTap: onEditTap),
+// ─────────────────────────────────────────────
+//  IMPACT SECTION
+// ─────────────────────────────────────────────
+class _ImpactSection extends StatelessWidget {
+  const _ImpactSection({required this.data});
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final carbon = (data['carbonFootprint'] as num?)?.toDouble() ?? 24.6;
+    final waste = (data['wasteReduced'] as num?)?.toDouble() ?? 18.2;
+    final water = (data['waterSaved'] as num?)?.toDouble() ?? 1250.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Your Impact',
+          style: GoogleFonts.poppins(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1B4332),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _ImpactCard(
+                iconAsset: 'assets/images/co2_icon.png',
+                iconFallback: Icons.cloud_outlined,
+                iconBg: const Color(0xFFE8F5E9),
+                iconColor: const Color(0xFF2D6A4F),
+                label: 'Carbon Footprint',
+                value: '${carbon}kg',
+                change: '18% vs last month',
+                isPositive: false,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ImpactCard(
+                iconAsset: 'assets/images/recycle_icon.png',
+                iconFallback: Icons.recycling,
+                iconBg: const Color(0xFFE8F5E9),
+                iconColor: const Color(0xFF2D6A4F),
+                label: 'Waste Reduced',
+                value: '${waste}kg',
+                change: '15% vs last month',
+                isPositive: true,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ImpactCard(
+                iconAsset: 'assets/images/water_icon.png',
+                iconFallback: Icons.water_drop_outlined,
+                iconBg: const Color(0xFFE3F2FD),
+                iconColor: const Color(0xFF1565C0),
+                label: 'Water Saved',
+                value: '${water.toInt()}L',
+                change: '22% vs last month',
+                isPositive: true,
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _HeaderClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 40);
-    path.quadraticBezierTo(
-        size.width / 2, size.height + 20, size.width, size.height - 40);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
+class _ImpactCard extends StatelessWidget {
+  const _ImpactCard({
+    required this.iconAsset,
+    required this.iconFallback,
+    required this.iconBg,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+    required this.change,
+    required this.isPositive,
+  });
 
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  final String imageUrl;
-  const _ProfileAvatar({required this.imageUrl});
+  final String iconAsset;
+  final IconData iconFallback;
+  final Color iconBg;
+  final Color iconColor;
+  final String label;
+  final String value;
+  final String change;
+  final bool isPositive;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 88,
-      height: 88,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: ClipOval(
-        child: imageUrl.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => _avatarPlaceholder(),
-                errorWidget: (_, __, ___) => _avatarPlaceholder(),
-              )
-            : _avatarPlaceholder(),
-      ),
-    );
-  }
-
-  Widget _avatarPlaceholder() => Container(
-        color: EcoTheme.primaryLight,
-        child: const Icon(Icons.person, color: Colors.white, size: 44),
-      );
-}
-
-class _BadgeRow extends StatelessWidget {
-  final UserProfile? profile;
-  final VoidCallback? onEditTap;
-
-  const _BadgeRow({required this.profile, this.onEditTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: EcoTheme.cardShadow,
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badge image
-          Image.asset(
-            'assets/images/badge_eco_warrior.png',
-            width: 40,
-            height: 40,
-            errorBuilder: (_, __, ___) => Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: EcoTheme.accentSoft,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.eco, color: EcoTheme.primary, size: 22),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile?.badgeTitle ?? 'Eco Warrior',
-                  style: EcoTheme.poppins(
-                    size: 13,
-                    weight: FontWeight.w600,
-                    color: EcoTheme.primary,
-                  ),
-                ),
-                Text(
-                  profile?.ecoLevel ?? 'Level 1',
-                  style: EcoTheme.poppins(size: 11, color: EcoTheme.textLight),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: onEditTap,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                gradient: EcoTheme.scoreGradient,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Edit Profile',
-                style: EcoTheme.poppins(
-                  size: 12,
-                  weight: FontWeight.w600,
-                  color: Colors.white,
-                ),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Image.asset(
+                iconAsset,
+                errorBuilder: (_, __, ___) => Icon(iconFallback, color: iconColor, size: 18),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  SUSTAINABILITY SCORE CARD
-// ─────────────────────────────────────────────
-
-class _SustainabilityCard extends StatelessWidget {
-  final UserProfile? profile;
-  const _SustainabilityCard({required this.profile});
-
-  @override
-  Widget build(BuildContext context) {
-    final score = profile?.sustainabilityScore ?? 0;
-    final improvement = profile?.improvementPercent ?? 0;
-    final progress = (score / 100).clamp(0.0, 1.0);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: EcoTheme.scoreGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: EcoTheme.primary.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Sustainability Score',
-                  style: EcoTheme.poppins(
-                    size: 13,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      score.toStringAsFixed(0),
-                      style: EcoTheme.poppins(
-                        size: 48,
-                        weight: FontWeight.w700,
-                        color: Colors.white,
-                        height: 1,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8, left: 4),
-                      child: Text(
-                        '/100',
-                        style: EcoTheme.poppins(
-                          size: 16,
-                          color: Colors.white60,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.trending_up,
-                          color: Colors.white, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        '+${improvement.toStringAsFixed(1)}% this month',
-                        style: EcoTheme.poppins(
-                          size: 11,
-                          weight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: const Color(0xFF888888),
+              fontWeight: FontWeight.w500,
             ),
           ),
-          _CircularScoreIndicator(progress: progress, score: score),
-        ],
-      ),
-    );
-  }
-}
-
-class _CircularScoreIndicator extends StatelessWidget {
-  final double progress;
-  final double score;
-  const _CircularScoreIndicator(
-      {required this.progress, required this.score});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 90,
-      height: 90,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox(
-            width: 90,
-            height: 90,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 8,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Colors.white),
-              strokeCap: StrokeCap.round,
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1B4332),
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
+          const SizedBox(height: 2),
+          Row(
             children: [
-              Text(
-                '${(progress * 100).toStringAsFixed(0)}%',
-                style: EcoTheme.poppins(
-                  size: 18,
-                  weight: FontWeight.w700,
-                  color: Colors.white,
-                  height: 1,
-                ),
+              Icon(
+                isPositive ? Icons.arrow_downward : Icons.arrow_upward,
+                color: isPositive ? const Color(0xFF2D6A4F) : Colors.red,
+                size: 10,
               ),
-              Text(
-                'Score',
-                style: EcoTheme.poppins(
-                  size: 10,
-                  color: Colors.white70,
+              Expanded(
+                child: Text(
+                  change,
+                  style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    color: isPositive ? const Color(0xFF2D6A4F) : Colors.red,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -797,77 +707,27 @@ class _CircularScoreIndicator extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-//  STATS ROW
+//  WASTE REDUCTION CARD
 // ─────────────────────────────────────────────
+class _WasteReductionCard extends StatelessWidget {
+  const _WasteReductionCard({required this.data});
 
-class _StatsRow extends StatelessWidget {
-  final UserProfile? profile;
-  const _StatsRow({required this.profile});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(
-            icon: Icons.cloud_outlined,
-            iconColor: const Color(0xFF0288D1),
-            bgColor: const Color(0xFFE1F5FE),
-            label: 'Carbon Footprint',
-            value:
-                '${profile?.carbonFootprint.toStringAsFixed(1) ?? "—"} kg',
-            progress: ((profile?.carbonFootprint ?? 0) / 100).clamp(0.0, 1.0),
-            progressColor: const Color(0xFF0288D1),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
-            icon: Icons.recycling,
-            iconColor: EcoTheme.primary,
-            bgColor: EcoTheme.accentSoft,
-            label: 'Waste Reduced',
-            value:
-                '${profile?.wasteReduced.toStringAsFixed(1) ?? "—"} kg',
-            progress: (profile?.wasteProgress ?? 0).clamp(0.0, 1.0),
-            progressColor: EcoTheme.primary,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final Color bgColor;
-  final String label;
-  final String value;
-  final double progress;
-  final Color progressColor;
-
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.bgColor,
-    required this.label,
-    required this.value,
-    required this.progress,
-    required this.progressColor,
-  });
+  final Map<String, dynamic> data;
 
   @override
   Widget build(BuildContext context) {
+    final progress = (data['wasteProgress'] as num?)?.toDouble() ?? 0.75;
+    final percent = (progress * 100).toInt();
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: EcoTheme.cardShadow,
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
@@ -875,43 +735,185 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Waste Reduction Progress',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1B4332),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {},
+                child: Row(
+                  children: [
+                    Text(
+                      'View Details',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: const Color(0xFF40916C),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Color(0xFF40916C), size: 16),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            style: EcoTheme.poppins(
-              size: 11,
-              color: EcoTheme.textLight,
-            ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Circular progress
+              SizedBox(
+                width: 64,
+                height: 64,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 6,
+                        backgroundColor: const Color(0xFFE8F5E9),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF40916C)),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                    Text(
+                      '$percent%',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF2D6A4F),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Text info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Great Progress!',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1B4332),
+                      ),
+                    ),
+                    Text(
+                      "You're making a real difference.",
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: const Color(0xFF666666),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: EcoTheme.poppins(
-              size: 18,
-              weight: FontWeight.w700,
-              color: EcoTheme.textDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: bgColor,
-              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-              minHeight: 6,
-            ),
-          ),
+          const SizedBox(height: 16),
+
+          // Progress track
+          _MilestoneTrack(progress: progress),
         ],
       ),
+    );
+  }
+}
+
+class _MilestoneTrack extends StatelessWidget {
+  const _MilestoneTrack({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final milestones = [
+      ('25%', 'Starter', 0.25),
+      ('50%', 'Champion', 0.50),
+      ('75%', 'Hero', 0.75),
+      ('100%', 'Eco Legend', 1.0),
+    ];
+
+    return Column(
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                // Background track
+                Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                // Progress fill
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOut,
+                  height: 6,
+                  width: constraints.maxWidth * progress,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF40916C),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                // Dot markers
+                ...milestones.map((m) {
+                  final frac = m.$3;
+                  final reached = progress >= frac;
+                  return Positioned(
+                    left: constraints.maxWidth * frac - 7,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: reached ? const Color(0xFF40916C) : Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: reached ? const Color(0xFF40916C) : const Color(0xFFB7E4C7),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: milestones.map((m) {
+            final reached = progress >= m.$3;
+            return Text(
+              m.$2,
+              style: GoogleFonts.poppins(
+                fontSize: 9,
+                fontWeight: reached ? FontWeight.w700 : FontWeight.w400,
+                color: reached ? const Color(0xFF2D6A4F) : const Color(0xFFAAAAAA),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }
@@ -919,78 +921,148 @@ class _StatCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 //  CHALLENGES SECTION
 // ─────────────────────────────────────────────
-
 class _ChallengesSection extends StatelessWidget {
-  final Stream<QuerySnapshot<Map<String, dynamic>>> stream;
-  const _ChallengesSection({required this.stream});
+  const _ChallengesSection({required this.uid});
+
+  final String uid;
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: stream,
-      builder: (ctx, snap) {
-        if (!snap.hasData) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(
-                  color: EcoTheme.primary, strokeWidth: 2),
-            ),
-          );
-        }
-        final challenges = snap.data!.docs
-            .map((d) => Challenge.fromMap(d.data()))
-            .toList();
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('challenges')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final challenges = snapshot.data?.docs ?? [];
 
-        if (challenges.isEmpty) {
-          return _EmptyState(message: 'No completed challenges yet.');
-        }
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Column(
-            children: challenges.map((c) => _ChallengeItem(c)).toList(),
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Completed Challenges',
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1B4332),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Row(
+                      children: [
+                        Text(
+                          'View All',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: const Color(0xFF40916C),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Color(0xFF40916C), size: 16),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              if (challenges.isEmpty)
+                _defaultChallenges()
+              else
+                ...challenges.map((doc) {
+                  final d = doc.data() as Map<String, dynamic>;
+                  return _ChallengeItem(
+                    title: d['title'] ?? '',
+                    subtitle: d['subtitle'] ?? '',
+                    status: d['status'] ?? 'active',
+                    progress: (d['progress'] as num?)?.toDouble() ?? 0.0,
+                    icon: Icons.eco,
+                  );
+                }),
+            ],
           ),
         );
       },
     );
   }
+
+  Widget _defaultChallenges() {
+    return Column(
+      children: const [
+        _ChallengeItem(
+          title: 'Plastic Free July',
+          subtitle: 'Avoid single-use plastics',
+          status: 'completed',
+          progress: 1.0,
+          icon: Icons.shopping_bag_outlined,
+        ),
+        _ChallengeItem(
+          title: 'Waste Less Challenge',
+          subtitle: 'Reduce household waste',
+          status: 'completed',
+          progress: 1.0,
+          icon: Icons.delete_outline,
+        ),
+        _ChallengeItem(
+          title: 'Plant 5 Trees',
+          subtitle: 'Make our planet greener',
+          status: 'active',
+          progress: 0.8,
+          icon: Icons.park_outlined,
+        ),
+      ],
+    );
+  }
 }
 
 class _ChallengeItem extends StatelessWidget {
-  final Challenge challenge;
-  const _ChallengeItem(this.challenge);
+  const _ChallengeItem({
+    required this.title,
+    required this.subtitle,
+    required this.status,
+    required this.progress,
+    required this.icon,
+  });
+
+  final String title;
+  final String subtitle;
+  final String status;
+  final double progress;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: EcoTheme.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final isCompleted = status == 'completed';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: EcoTheme.accentSoft,
-              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(12),
             ),
-            alignment: Alignment.center,
-            child: Text(
-              challenge.icon,
-              style: const TextStyle(fontSize: 22),
-            ),
+            child: Icon(icon, color: const Color(0xFF40916C), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -998,46 +1070,68 @@ class _ChallengeItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  challenge.title,
-                  style: EcoTheme.poppins(
-                    size: 13,
-                    weight: FontWeight.w600,
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1B4332),
                   ),
                 ),
                 Text(
-                  challenge.subtitle,
-                  style: EcoTheme.poppins(
-                    size: 11,
-                    color: EcoTheme.textLight,
-                  ),
+                  subtitle,
+                  style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF888888)),
                 ),
               ],
             ),
           ),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: EcoTheme.accentSoft,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          if (isCompleted)
+            Row(
               children: [
-                const Icon(Icons.check_circle,
-                    color: EcoTheme.primary, size: 12),
-                const SizedBox(width: 4),
                 Text(
-                  challenge.status,
-                  style: EcoTheme.poppins(
-                    size: 10,
-                    weight: FontWeight.w600,
-                    color: EcoTheme.primary,
+                  'Completed',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: const Color(0xFF40916C),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(width: 4),
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF40916C),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 14),
+                ),
               ],
+            )
+          else
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 3,
+                    backgroundColor: const Color(0xFFE8F5E9),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF40916C)),
+                    strokeCap: StrokeCap.round,
+                  ),
+                  Text(
+                    '${(progress * 5).toInt()}/5',
+                    style: GoogleFonts.poppins(
+                      fontSize: 7,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2D6A4F),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -1047,458 +1141,175 @@ class _ChallengeItem extends StatelessWidget {
 // ─────────────────────────────────────────────
 //  ACHIEVEMENTS SECTION
 // ─────────────────────────────────────────────
-
 class _AchievementsSection extends StatelessWidget {
-  final Stream<QuerySnapshot<Map<String, dynamic>>> stream;
-  const _AchievementsSection({required this.stream});
+  const _AchievementsSection({required this.uid});
+
+  final String uid;
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: stream,
-      builder: (ctx, snap) {
-        if (!snap.hasData) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(
-                  color: EcoTheme.primary, strokeWidth: 2),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('achievements')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final docs = snapshot.data?.docs ?? [];
+
+        final achievements = docs.isNotEmpty
+            ? docs.map((doc) {
+                final d = doc.data() as Map<String, dynamic>;
+                return _AchievementData(
+                  title: d['title'] ?? '',
+                  image: d['image'] ?? '',
+                  unlocked: d['unlocked'] as bool? ?? false,
+                );
+              }).toList()
+            : _defaultAchievements;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Achievements',
+                    style: GoogleFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1B4332),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Row(
+                      children: [
+                        Text(
+                          'View All',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: const Color(0xFF40916C),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Color(0xFF40916C), size: 16),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        }
-        final achievements = snap.data!.docs
-            .map((d) => Achievement.fromMap(d.data()))
-            .toList();
-
-        if (achievements.isEmpty) {
-          return _EmptyState(message: 'No achievements yet.');
-        }
-
-        return SizedBox(
-          height: 110,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: achievements.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, i) => _AchievementItem(achievements[i]),
-          ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: achievements.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, i) => _AchievementBadge(achievement: achievements[i]),
+              ),
+            ),
+          ],
         );
       },
     );
   }
+
+  List<_AchievementData> get _defaultAchievements => [
+        _AchievementData(title: 'Eco Starter', image: 'assets/images/leaf_icon.png', unlocked: true),
+        _AchievementData(title: 'Tree Planter', image: 'assets/images/tree_badge.png', unlocked: true),
+        _AchievementData(title: 'Waste Reducer', image: 'assets/images/recycle_badge.png', unlocked: true),
+        _AchievementData(title: 'Water Saver', image: 'assets/images/water_badge.png', unlocked: true),
+        _AchievementData(title: 'Climate Hero', image: 'assets/images/climate_badge.png', unlocked: false),
+      ];
 }
 
-class _AchievementItem extends StatelessWidget {
-  final Achievement achievement;
-  const _AchievementItem(this.achievement);
+class _AchievementData {
+  const _AchievementData({required this.title, required this.image, required this.unlocked});
 
-  static const Map<String, String> _assetMap = {
-    'tree_planter': 'assets/images/tree_planter.png',
-    'recycling_pro': 'assets/images/recycling_pro.png',
-    'water_saver': 'assets/images/water_saver.png',
-    'energy_saver': 'assets/images/energy_saver.png',
-    'eco_leader': 'assets/images/eco_leader.png',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final assetPath = _assetMap[achievement.image] ?? '';
-
-    return Container(
-      width: 88,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: EcoTheme.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          assetPath.isNotEmpty
-              ? Image.asset(
-                  assetPath,
-                  width: 44,
-                  height: 44,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.emoji_events,
-                    color: EcoTheme.primaryLight,
-                    size: 36,
-                  ),
-                )
-              : const Icon(Icons.emoji_events,
-                  color: EcoTheme.primaryLight, size: 36),
-          const SizedBox(height: 6),
-          Text(
-            achievement.title,
-            style: EcoTheme.poppins(
-              size: 9,
-              weight: FontWeight.w600,
-              color: EcoTheme.textDark,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  POINTS & RANK CARD
-// ─────────────────────────────────────────────
-
-class _PointsRankCard extends StatelessWidget {
-  final UserProfile profile;
-  const _PointsRankCard({required this.profile});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: EcoTheme.cardShadow,
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _PointItem(
-              icon: Icons.star_rounded,
-              iconColor: const Color(0xFFFFA726),
-              iconBg: const Color(0xFFFFF3E0),
-              label: 'Eco Points',
-              value: '${profile.ecoPoints}',
-            ),
-          ),
-          Container(
-              width: 1, height: 50, color: EcoTheme.background),
-          Expanded(
-            child: _PointItem(
-              icon: Icons.leaderboard_rounded,
-              iconColor: EcoTheme.primary,
-              iconBg: EcoTheme.accentSoft,
-              label: 'Ranking',
-              value: profile.rankText,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PointItem extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final Color iconBg;
-  final String label;
-  final String value;
-
-  const _PointItem({
-    required this.icon,
-    required this.iconColor,
-    required this.iconBg,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: iconBg,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: iconColor, size: 22),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: EcoTheme.poppins(
-            size: 18,
-            weight: FontWeight.w700,
-            color: EcoTheme.textDark,
-          ),
-        ),
-        Text(
-          label,
-          style: EcoTheme.poppins(size: 11, color: EcoTheme.textLight),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  LOGOUT BUTTON
-// ─────────────────────────────────────────────
-
-class _LogoutButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _LogoutButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.red.shade100),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'Sign Out',
-              style: EcoTheme.poppins(
-                size: 14,
-                weight: FontWeight.w600,
-                color: Colors.red.shade400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  BOTTOM NAVIGATION
-// ─────────────────────────────────────────────
-
-class _EcoBottomNav extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-
-  const _EcoBottomNav({required this.currentIndex, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.10),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          _NavItem(
-              icon: Icons.home_outlined,
-              filledIcon: Icons.home_rounded,
-              label: 'Home',
-              index: 0,
-              current: currentIndex,
-              onTap: onTap),
-          _NavItem(
-              icon: Icons.explore_outlined,
-              filledIcon: Icons.explore_rounded,
-              label: 'Explore',
-              index: 1,
-              current: currentIndex,
-              onTap: onTap),
-          // Center Plus button
-          Expanded(
-            child: GestureDetector(
-              onTap: () => onTap(2),
-              child: Center(
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    gradient: EcoTheme.scoreGradient,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: EcoTheme.primary.withOpacity(0.4),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 28),
-                ),
-              ),
-            ),
-          ),
-          _NavItem(
-              icon: Icons.people_outline_rounded,
-              filledIcon: Icons.people_rounded,
-              label: 'Community',
-              index: 3,
-              current: currentIndex,
-              onTap: onTap),
-          _NavItem(
-              icon: Icons.person_outline_rounded,
-              filledIcon: Icons.person_rounded,
-              label: 'Profile',
-              index: 4,
-              current: currentIndex,
-              onTap: onTap),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final IconData filledIcon;
-  final String label;
-  final int index;
-  final int current;
-  final ValueChanged<int> onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.filledIcon,
-    required this.label,
-    required this.index,
-    required this.current,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final active = index == current;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onTap(index),
-        behavior: HitTestBehavior.translucent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                active ? filledIcon : icon,
-                key: ValueKey(active),
-                color: active ? EcoTheme.primary : EcoTheme.textLight,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: EcoTheme.poppins(
-                size: 10,
-                weight: active ? FontWeight.w600 : FontWeight.w400,
-                color: active ? EcoTheme.primary : EcoTheme.textLight,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────
-
-class _SectionPadding extends StatelessWidget {
-  final Widget child;
-  const _SectionPadding({required this.child});
-
-  @override
-  Widget build(BuildContext context) =>
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: child);
-}
-
-class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final String image;
+  final bool unlocked;
+}
+
+class _AchievementBadge extends StatelessWidget {
+  const _AchievementBadge({required this.achievement});
+
+  final _AchievementData achievement;
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) {
+    final isUrl = achievement.image.startsWith('http');
+
+    return Opacity(
+      opacity: achievement.unlocked ? 1.0 : 0.4,
+      child: Column(
         children: [
           Container(
-            width: 4,
-            height: 18,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              gradient: EcoTheme.scoreGradient,
-              borderRadius: BorderRadius.circular(2),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFB7E4C7),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF40916C).withOpacity(0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: isUrl
+                  ? CachedNetworkImage(
+                      imageUrl: achievement.image,
+                      errorWidget: (_, __, ___) =>
+                          const Icon(Icons.eco, color: Color(0xFF40916C), size: 28),
+                    )
+                  : Image.asset(
+                      achievement.image,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.eco, color: Color(0xFF40916C), size: 28),
+                    ),
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: EcoTheme.poppins(
-              size: 16,
-              weight: FontWeight.w700,
-              color: EcoTheme.textDark,
+          const SizedBox(height: 6),
+          SizedBox(
+            width: 70,
+            child: Text(
+              achievement.title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1B4332),
+              ),
             ),
           ),
         ],
-      );
-}
-
-class _EmptyState extends StatelessWidget {
-  final String message;
-  const _EmptyState({required this.message});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: EcoTheme.poppins(size: 13, color: EcoTheme.textLight),
-        ),
-      );
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────
 //  EDIT PROFILE BOTTOM SHEET
 // ─────────────────────────────────────────────
-
 class _EditProfileSheet extends StatefulWidget {
-  final UserProfile profile;
-  final String uid;
+  const _EditProfileSheet({required this.uid, required this.data});
 
-  const _EditProfileSheet({required this.profile, required this.uid});
+  final String uid;
+  final Map<String, dynamic> data;
 
   @override
   State<_EditProfileSheet> createState() => _EditProfileSheetState();
@@ -1506,274 +1317,359 @@ class _EditProfileSheet extends StatefulWidget {
 
 class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController _nameCtrl;
-  late final TextEditingController _usernameCtrl;
-  late final TextEditingController _locationCtrl;
+  late final TextEditingController _emailCtrl;
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _bioCtrl;
 
-  File? _pickedImage;
-  bool _isSaving = false;
-  final _picker = ImagePicker();
+  XFile? _pickedImage;
+  Uint8List? _pickedImageBytes;
+  bool _loading = false;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.profile.fullName);
-    _usernameCtrl = TextEditingController(text: widget.profile.username);
-    _locationCtrl = TextEditingController(text: widget.profile.location);
+    _nameCtrl = TextEditingController(text: widget.data['fullName'] ?? '');
+    _emailCtrl = TextEditingController(text: widget.data['email'] ?? '');
+    _titleCtrl = TextEditingController(text: widget.data['ecoTitle'] ?? 'Eco Warrior');
+    _bioCtrl = TextEditingController(text: widget.data['bio'] ?? '');
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _usernameCtrl.dispose();
-    _locationCtrl.dispose();
+    _emailCtrl.dispose();
+    _titleCtrl.dispose();
+    _bioCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage() async {
-    final xFile =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (xFile != null) {
-      setState(() => _pickedImage = File(xFile.path));
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _pickedImage = picked;
+        _pickedImageBytes = bytes;
+      });
     }
   }
 
-  Future<String?> _uploadImage() async {
-    if (_pickedImage == null) return null;
-    try {
-      final ref = FirebaseStorage.instance
-          .ref('profile_images/${widget.uid}.jpg');
-      await ref.putFile(_pickedImage!);
-      return await ref.getDownloadURL();
-    } catch (e) {
-      return null;
+  Future<String> _uploadImageToCloudinary(XFile image) async {
+    if (kCloudinaryCloudName == 'YOUR_CLOUD_NAME' ||
+        kCloudinaryUploadPreset == 'YOUR_UNSIGNED_UPLOAD_PRESET') {
+      throw Exception('Cloudinary cloud name aur unsigned upload preset set karo.');
     }
+
+    final bytes = await image.readAsBytes();
+
+    final url = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$kCloudinaryCloudName/image/upload',
+    );
+
+    final request = http.MultipartRequest('POST', url)
+      ..fields['upload_preset'] = kCloudinaryUploadPreset
+      ..fields['folder'] = kCloudinaryFolder
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: image.name.isNotEmpty ? image.name : 'profile_${widget.uid}.jpg',
+        ),
+      );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Cloudinary upload failed: ${response.body}');
+    }
+
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final secureUrl = decoded['secure_url'] as String?;
+
+    if (secureUrl == null || secureUrl.isEmpty) {
+      throw Exception('Cloudinary ne image URL return nahi kiya.');
+    }
+
+    return secureUrl;
   }
 
   Future<void> _save() async {
-    setState(() => _isSaving = true);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+
     try {
-      String? imageUrl = await _uploadImage();
-      final data = <String, dynamic>{
+      String? imageUrl;
+
+      if (_pickedImage != null) {
+        imageUrl = await _uploadImageToCloudinary(_pickedImage!);
+      }
+
+      final updates = <String, dynamic>{
         'fullName': _nameCtrl.text.trim(),
-        'username': _usernameCtrl.text.trim(),
-        'location': _locationCtrl.text.trim(),
-        if (imageUrl != null) 'profileImageUrl': imageUrl,
+        'email': _emailCtrl.text.trim(),
+        'ecoTitle': _titleCtrl.text.trim(),
+        'bio': _bioCtrl.text.trim(),
       };
+      if (imageUrl != null) updates['profileImage'] = imageUrl;
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.uid)
-          .update(data);
-      if (mounted) Navigator.pop(context);
+          .set(updates, SetOptions(merge: true));
+
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e',
-                style: EcoTheme.poppins(color: Colors.white, size: 13)),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error saving profile: $e')),
         );
       }
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF9FFF9),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              const SizedBox(height: 12),
+              Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: const Color(0xFFCCCCCC),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-            Text(
-              'Edit Profile',
-              style: EcoTheme.poppins(
-                size: 20,
-                weight: FontWeight.w700,
-                color: EcoTheme.textDark,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Avatar picker
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: Stack(
-                  alignment: Alignment.bottomRight,
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
                   children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: EcoTheme.primary, width: 2),
-                      ),
-                      child: ClipOval(
-                        child: _pickedImage != null
-                            ? Image.file(_pickedImage!, fit: BoxFit.cover)
-                            : (widget.profile.profileImageUrl.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: widget.profile.profileImageUrl,
-                                    fit: BoxFit.cover,
-                                    errorWidget: (_, __, ___) =>
-                                        _avatarFallback(),
-                                  )
-                                : _avatarFallback()),
+                    Text(
+                      'Edit Profile',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1B4332),
                       ),
                     ),
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: EcoTheme.scoreGradient,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.close, size: 18, color: Color(0xFF40916C)),
                       ),
-                      child: const Icon(Icons.camera_alt,
-                          color: Colors.white, size: 14),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
 
-            _InputField(
-              controller: _nameCtrl,
-              label: 'Full Name',
-              icon: Icons.person_outline,
-            ),
-            const SizedBox(height: 14),
-            _InputField(
-              controller: _usernameCtrl,
-              label: 'Username',
-              icon: Icons.alternate_email,
-            ),
-            const SizedBox(height: 14),
-            _InputField(
-              controller: _locationCtrl,
-              label: 'Location',
-              icon: Icons.location_on_outlined,
-            ),
-            const SizedBox(height: 28),
-
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                ),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    gradient: EcoTheme.scoreGradient,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : Text(
-                            'Save Changes',
-                            style: EcoTheme.poppins(
-                              size: 15,
-                              weight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        // Avatar picker
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: const Color(0xFF40916C), width: 2.5),
+                                ),
+                                child: ClipOval(
+                                  child: _pickedImageBytes != null
+                                      ? Image.memory(_pickedImageBytes!, fit: BoxFit.cover)
+                                      : (widget.data['profileImage'] != null &&
+                                              widget.data['profileImage'].toString().isNotEmpty
+                                          ? CachedNetworkImage(
+                                              imageUrl: widget.data['profileImage'],
+                                              fit: BoxFit.cover,
+                                              placeholder: (_, __) => const _AvatarPlaceholder(),
+                                              errorWidget: (_, __, ___) => const _AvatarPlaceholder(),
+                                            )
+                                          : const _AvatarPlaceholder()),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF40916C),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        _EcoTextField(
+                          controller: _nameCtrl,
+                          label: 'Full Name',
+                          icon: Icons.person_outline,
+                          validator: (v) => (v?.isEmpty ?? true) ? 'Required' : null,
+                        ),
+                        const SizedBox(height: 14),
+
+                        _EcoTextField(
+                          controller: _emailCtrl,
+                          label: 'Email',
+                          icon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (v) =>
+                              (v?.contains('@') ?? false) ? null : 'Invalid email',
+                        ),
+                        const SizedBox(height: 14),
+
+                        _EcoTextField(
+                          controller: _titleCtrl,
+                          label: 'Eco Title',
+                          icon: Icons.eco_outlined,
+                          validator: (v) => (v?.isEmpty ?? true) ? 'Required' : null,
+                        ),
+                        const SizedBox(height: 14),
+
+                        _EcoTextField(
+                          controller: _bioCtrl,
+                          label: 'Bio / Location',
+                          icon: Icons.location_on_outlined,
+                          maxLines: 2,
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Save button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _save,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2D6A4F),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    'Save Changes',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
-
-  Widget _avatarFallback() => Container(
-        color: EcoTheme.primaryLight,
-        child: const Icon(Icons.person, color: Colors.white, size: 44),
-      );
 }
 
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final IconData icon;
-
-  const _InputField({
+// ─────────────────────────────────────────────
+//  ECO TEXT FIELD
+// ─────────────────────────────────────────────
+class _EcoTextField extends StatelessWidget {
+  const _EcoTextField({
     required this.controller,
     required this.label,
     required this.icon,
+    this.validator,
+    this.keyboardType,
+    this.maxLines = 1,
   });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: EcoTheme.background,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: TextField(
-        controller: controller,
-        style: EcoTheme.poppins(size: 14, color: EcoTheme.textDark),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle:
-              EcoTheme.poppins(size: 13, color: EcoTheme.textLight),
-          prefixIcon: Icon(icon, color: EcoTheme.textLight, size: 20),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide:
-                const BorderSide(color: EcoTheme.primary, width: 1.5),
-          ),
-          filled: true,
-          fillColor: EcoTheme.background,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF1B4332)),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.poppins(color: const Color(0xFF888888), fontSize: 13),
+        prefixIcon: Icon(icon, color: const Color(0xFF40916C), size: 20),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF40916C), width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.red),
         ),
       ),
     );

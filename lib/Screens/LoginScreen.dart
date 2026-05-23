@@ -3,7 +3,8 @@ import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:my_app/Screens/HomeScreen.dart';
+import 'package:my_app/MainScreen.dart';
+
 import 'package:my_app/Screens/SignupScreen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -130,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen>
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
+          builder: (context) => const MainScreen(),
         ),
       );
     } on FirebaseAuthException catch (e) {

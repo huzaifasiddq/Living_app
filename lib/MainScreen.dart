@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_app/Screens/CarbonTrackerScreen.dart';
 
 import 'package:my_app/Screens/HomeScreen.dart';
 import 'package:my_app/Screens/ProfileScreen.dart';
@@ -48,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = const [
     HomeScreen(),
-    PlaceholderPage(title: 'Track'),
+    CarbonTrackerScreen(),
     PlaceholderPage(title: 'Community'),
     PlaceholderPage(title: 'Recipe'),
     ProfileScreen(),

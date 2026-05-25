@@ -16,9 +16,7 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
     DevicePreview(
@@ -43,16 +41,22 @@ class EatcnobityApp extends StatelessWidget {
       routes: {
         "/Login": (context) => const LoginScreen(),
         "/Profile": (context) => const ProfileScreen(),
-         '/user-management': (_) => const ManageUsersScreen(),
-  '/product-management': (_) => const ManageProductsScreen(),
-  '/recipe-management': (_) => const ManageRecipesScreen(),
-  '/challenge-management': (_) => const ManageChallengesScreen(),
-  '/content-manager': (_) => const PlaceholderScreen(title: 'Content Manager'),
-  '/community-posts': (_) => const PlaceholderScreen(title: 'Community Posts'),
-  '/reports-analytics': (_) => const PlaceholderScreen(title: 'Reports & Analytics'),
-  '/eco-tips-manager': (_) => const PlaceholderScreen(title: 'Eco Tips Manager'),
-  '/feedback-queries': (_) => const PlaceholderScreen(title: 'Feedback & Queries'),
-  '/admin-profile': (_) => const PlaceholderScreen(title: 'Admin Profile'),
+        '/user-management': (_) => const ManageUsersScreen(),
+        '/product-management': (_) => const ManageProductsScreen(),
+        '/recipe-management': (_) => const ManageRecipesScreen(),
+        '/challenge-management': (_) => const ManageChallengesScreen(),
+        '/content-manager': (_) =>
+            const PlaceholderScreen(title: 'Content Manager'),
+        '/community-posts': (_) =>
+            const PlaceholderScreen(title: 'Community Posts'),
+        '/reports-analytics': (_) =>
+            const PlaceholderScreen(title: 'Reports & Analytics'),
+        '/eco-tips-manager': (_) =>
+            const PlaceholderScreen(title: 'Eco Tips Manager'),
+        '/feedback-queries': (_) =>
+            const PlaceholderScreen(title: 'Feedback & Queries'),
+        '/admin-profile': (_) =>
+            const PlaceholderScreen(title: 'Admin Profile'),
       },
     );
   }

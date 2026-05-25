@@ -4,6 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_app/Screens/ProductScreen.dart';
+
+
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -74,7 +78,8 @@ class HomeScreen extends StatelessWidget {
           final data = snapshot.data?.data() ?? {};
 
           final userName = data['fullName'] ?? data['name'] ?? 'User';
-          final photoUrl = data['profileImage'] ?? data['profileImageUrl'] ?? data['photoURL'];
+          final photoUrl =
+              data['profileImage'] ?? data['profileImageUrl'] ?? data['photoURL'];
 
           final carbonFootprint = _toDouble(data['carbonFootprint'], 2.45);
           final carbonProgress = _toDouble(data['carbonProgress'], 0.72);
@@ -84,8 +89,7 @@ class HomeScreen extends StatelessWidget {
           final wasteProgress = _toDouble(data['wasteProgress'], 0.45);
           final wasteChange = _toInt(data['wasteChange'], 12);
 
-          final dailyGoalProgress =
-              _toDouble(data['dailyGoalProgress'], 0.75);
+          final dailyGoalProgress = _toDouble(data['dailyGoalProgress'], 0.75);
 
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -93,6 +97,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 _headerUI(userName: userName, photoUrl: photoUrl),
                 _buildMainCard(
+                  context: context,
                   carbonFootprint: carbonFootprint,
                   carbonProgress: carbonProgress,
                   carbonChange: carbonChange,
@@ -116,10 +121,7 @@ class HomeScreen extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            bgImage,
-            fit: BoxFit.cover,
-          ),
+          Image.asset(bgImage, fit: BoxFit.cover),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -224,6 +226,196 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildMainCard({
+    required BuildContext context,
+    required double carbonFootprint,
+    required double carbonProgress,
+    required int carbonChange,
+    required double wasteDiverted,
+    required double wasteProgress,
+    required int wasteChange,
+    required double dailyGoalProgress,
+  }) {
+    return Transform.translate(
+      offset: const Offset(0, -95),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5FAF5),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2E7D32).withOpacity(0.10),
+              blurRadius: 24,
+              offset: const Offset(0, -6),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+          child: Column(
+            children: [
+              _buildImpactSection(
+                carbonFootprint: carbonFootprint,
+                carbonProgress: carbonProgress,
+                carbonChange: carbonChange,
+                wasteDiverted: wasteDiverted,
+                wasteProgress: wasteProgress,
+                wasteChange: wasteChange,
+              ),
+              const SizedBox(height: 18),
+              _buildDailyGoalSection(dailyGoalProgress),
+              const SizedBox(height: 20),
+              _buildExploreSection(context),
+              const SizedBox(height: 18),
+              _buildEcoTipCard(),
+              const SizedBox(height: 18),
+              _buildRecentActivity(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExploreSection(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Text(
+              'Explore',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF1B5E20),
+              ),
+            ),
+            const Spacer(),
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProductScreen()),
+                );
+              },
+              child: Row(
+                children: [
+                  Text(
+                    'View All',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF43A047),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Color(0xFF43A047),
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 132,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: exploreItems.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              return _buildExploreCard(context, exploreItems[index], index);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExploreCard(
+    BuildContext context,
+    _ExploreItem item,
+    int index,
+  ) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(17),
+      onTap: () {
+        if (index == 0) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProductScreen()),
+          );
+        }
+      },
+      child: Container(
+        width: 112,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(17),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.10),
+              blurRadius: 9,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(17),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                item.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) {
+                  return Container(color: const Color(0xFF2E7D32));
+                },
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.68)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 10,
+                left: 8,
+                right: 8,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 9.5,
+                        color: Colors.white.withOpacity(0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   String _greetingText() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good Morning,';
@@ -265,56 +457,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMainCard({
-    required double carbonFootprint,
-    required double carbonProgress,
-    required int carbonChange,
-    required double wasteDiverted,
-    required double wasteProgress,
-    required int wasteChange,
-    required double dailyGoalProgress,
-  }) {
-    return Transform.translate(
-      offset: const Offset(0, -95),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5FAF5),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF2E7D32).withOpacity(0.10),
-              blurRadius: 24,
-              offset: const Offset(0, -6),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
-          child: Column(
-            children: [
-              _buildImpactSection(
-                carbonFootprint: carbonFootprint,
-                carbonProgress: carbonProgress,
-                carbonChange: carbonChange,
-                wasteDiverted: wasteDiverted,
-                wasteProgress: wasteProgress,
-                wasteChange: wasteChange,
-              ),
-              const SizedBox(height: 18),
-              _buildDailyGoalSection(dailyGoalProgress),
-              const SizedBox(height: 20),
-              _buildExploreSection(),
-              const SizedBox(height: 18),
-              _buildEcoTipCard(),
-              const SizedBox(height: 18),
-              _buildRecentActivity(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _sectionTitle(String emoji, String title) {
     return Row(
       children: [
@@ -325,9 +467,7 @@ class HomeScreen extends StatelessWidget {
             color: Color(0xFFE8F5E9),
             shape: BoxShape.circle,
           ),
-          child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 14)),
-          ),
+          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 14))),
         ),
         const SizedBox(width: 8),
         Text(
@@ -401,15 +541,9 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(label,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey[600])),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -417,21 +551,10 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      value,
-                      style: GoogleFonts.poppins(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF1B5E20),
-                      ),
-                    ),
-                    Text(
-                      unit,
-                      style: GoogleFonts.poppins(
-                        fontSize: 9.5,
-                        color: Colors.grey[500],
-                      ),
-                    ),
+                    Text(value,
+                        style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w900, color: const Color(0xFF1B5E20))),
+                    Text(unit,
+                        style: GoogleFonts.poppins(fontSize: 9.5, color: Colors.grey[500])),
                   ],
                 ),
               ),
@@ -450,21 +573,8 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 9),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              change,
-              style: GoogleFonts.poppins(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF2E7D32),
-              ),
-            ),
-          ),
+          Text(change,
+              style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w600, color: const Color(0xFF2E7D32))),
         ],
       ),
     );
@@ -492,19 +602,12 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$percent%',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF2E7D32),
-                  ),
+              Text(
+                '$percent%',
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2E7D32),
                 ),
               ),
             ],
@@ -516,9 +619,7 @@ class HomeScreen extends StatelessWidget {
               value: progress.clamp(0.0, 1.0),
               minHeight: 8,
               backgroundColor: const Color(0xFFE8F5E9),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFF43A047),
-              ),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
             ),
           ),
           const SizedBox(height: 16),
@@ -533,20 +634,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  BoxDecoration _whiteCardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(19),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF2E7D32).withOpacity(0.08),
-          blurRadius: 13,
-          offset: const Offset(0, 5),
-        ),
-      ],
     );
   }
 
@@ -565,160 +652,18 @@ class HomeScreen extends StatelessWidget {
   Widget _buildGoalItem(String emoji, String label, bool completed) {
     return Column(
       children: [
-        Stack(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: completed
-                    ? const Color(0xFFE8F5E9)
-                    : const Color(0xFFF5F5F5),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: completed
-                      ? const Color(0xFF66BB6A)
-                      : Colors.grey.withOpacity(0.2),
-                  width: 1.5,
-                ),
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 20)),
-              ),
-            ),
-            if (completed)
-              const Positioned(
-                bottom: 0,
-                right: 0,
-                child: CircleAvatar(
-                  radius: 8,
-                  backgroundColor: Color(0xFF43A047),
-                  child: Icon(Icons.check, color: Colors.white, size: 10),
-                ),
-              ),
-          ],
-        ),
+        Text(emoji, style: const TextStyle(fontSize: 20)),
         const SizedBox(height: 5),
-        SizedBox(
-          width: 60,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 9.5,
-              fontWeight: FontWeight.w500,
-              color: completed ? const Color(0xFF2E7D32) : Colors.grey[500],
-            ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontSize: 9.5,
+            fontWeight: FontWeight.w500,
+            color: completed ? const Color(0xFF2E7D32) : Colors.grey[500],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildExploreSection() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Text(
-              'Explore',
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1B5E20),
-              ),
-            ),
-            const Spacer(),
-            Text(
-              'View All',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF43A047),
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 132,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: exploreItems.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) =>
-                _buildExploreCard(exploreItems[index]),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExploreCard(_ExploreItem item) {
-    return Container(
-      width: 112,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(17),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.10),
-            blurRadius: 9,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(17),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              item.imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) {
-                return Container(color: const Color(0xFF2E7D32));
-              },
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.68)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 10,
-              left: 8,
-              right: 8,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.subtitle,
-                    style: GoogleFonts.poppins(
-                      fontSize: 9.5,
-                      color: Colors.white.withOpacity(0.85),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -731,126 +676,43 @@ class HomeScreen extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 23,
-            backgroundColor: Color(0x33FFFFFF),
-            child: Text('🌱', style: TextStyle(fontSize: 22)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "Use a reusable water bottle.\nSmall choice, big change.",
-              style: GoogleFonts.poppins(
-                fontSize: 11.5,
-                color: Colors.white,
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Container(
-            width: 52,
-            height: 52,
-            decoration: const BoxDecoration(
-              color: Color(0x33FFFFFF),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '+25\n⭐',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  height: 1.1,
-                ),
-              ),
-            ),
-          ),
-        ],
+      child: Text(
+        "🌱 Use a reusable water bottle.\nSmall choice, big change.",
+        style: GoogleFonts.poppins(
+          fontSize: 11.5,
+          color: Colors.white,
+          height: 1.4,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
 
   Widget _buildRecentActivity() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Text(
-              'Recent Activity',
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1B5E20),
-              ),
-            ),
-            const Spacer(),
-            Text(
-              'View All',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF43A047),
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
-          ],
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: _whiteCardDecoration(),
+      child: Text(
+        '🌳 You planted a tree\n2 hours ago',
+        style: GoogleFonts.poppins(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF1B5E20),
+          height: 1.4,
         ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: _whiteCardDecoration(),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Center(
-                  child: Text('🌳', style: TextStyle(fontSize: 24)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'You planted a tree\n2 hours ago',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1B5E20),
-                    height: 1.4,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '+50\nPoints',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2E7D32),
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ],
-          ),
+      ),
+    );
+  }
+
+  BoxDecoration _whiteCardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(19),
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFF2E7D32).withOpacity(0.08),
+          blurRadius: 13,
+          offset: const Offset(0, 5),
         ),
       ],
     );
@@ -942,10 +804,7 @@ class CircularProgressPainter extends CustomPainter {
 
     textPainter.paint(
       canvas,
-      Offset(
-        center.dx - textPainter.width / 2,
-        center.dy - textPainter.height / 2,
-      ),
+      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
     );
   }
 

@@ -260,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen>
                               const SizedBox(height: 14),
 
                               Text(
-                                'Ecosphere',
+                                'EcoSphere',
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.poppins(
                                   fontSize: 28,

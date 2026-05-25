@@ -7,6 +7,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:my_app/Admin/ManageChallengesScreen.dart';
+import 'package:my_app/Admin/ManageProductsScreen.dart';
+import 'package:my_app/Admin/ManageRecipesScreen.dart';
+
+// TODO: Jab ye pages bana lo to in imports ko uncomment kar dena.
+// import 'package:my_app/Screens/Admin/ManageProductsScreen.dart';
+// import 'package:my_app/Screens/Admin/ManageRecipesScreen.dart';
+// import 'package:my_app/Screens/Admin/ManageChallengesScreen.dart';
+// import 'package:my_app/Screens/Admin/ManageEducationalContentScreen.dart';
+// import 'package:my_app/Screens/Admin/ManageCommunityPostsScreen.dart';
+// import 'package:my_app/Screens/Admin/ReportsAnalyticsScreen.dart';
+// import 'package:my_app/Screens/Admin/EcoTipsManagerScreen.dart';
+// import 'package:my_app/Screens/Admin/FeedbackQueriesScreen.dart';
+// import 'package:my_app/Screens/Admin/AdminProfileScreen.dart';
 
 // ─────────────────────────────────────────────
 // ENTRY POINT
@@ -40,14 +54,16 @@ class EcoSphereApp extends StatelessWidget {
       ),
       home: const AdminDashboardScreen(),
       routes: {
-        '/user-management': (_) => const PlaceholderScreen(title: 'User Management'),
-        '/product-management': (_) => const PlaceholderScreen(title: 'Product Management'),
-        '/recipe-management': (_) => const PlaceholderScreen(title: 'Recipe Management'),
-        '/challenge-management': (_) => const PlaceholderScreen(title: 'Challenge Management'),
-        '/content-manager': (_) => const PlaceholderScreen(title: 'Content Manager'),
-        '/reports-analytics': (_) => const PlaceholderScreen(title: 'Reports & Analytics'),
-        '/eco-tips-manager': (_) => const PlaceholderScreen(title: 'Eco Tips Manager'),
-        '/feedback-queries': (_) => const PlaceholderScreen(title: 'Feedback & Queries'),
+        AdminRoutes.users: (_) => const ManageUsersScreen(),
+        AdminRoutes.products: (_) => const ManageProductsScreen(),
+        AdminRoutes.recipes: (_) => const ManageRecipesScreen(),
+        AdminRoutes.challenges: (_) => const ManageChallengesScreen(),
+        AdminRoutes.content: (_) => const PlaceholderScreen(title: 'Content Manager'),
+        AdminRoutes.community: (_) => const PlaceholderScreen(title: 'Community Posts'),
+        AdminRoutes.reports: (_) => const PlaceholderScreen(title: 'Reports & Analytics'),
+        AdminRoutes.ecoTips: (_) => const PlaceholderScreen(title: 'Eco Tips Manager'),
+        AdminRoutes.feedback: (_) => const PlaceholderScreen(title: 'Feedback & Queries'),
+        AdminRoutes.profile: (_) => const PlaceholderScreen(title: 'Admin Profile'),
       },
     );
   }
@@ -72,6 +88,22 @@ class EcoColors {
   static const negative = Color(0xFFF44336);
   static const glassWhite = Color(0x14FFFFFF);
   static const glassBorder = Color(0x22FFFFFF);
+}
+
+// ─────────────────────────────────────────────
+// ADMIN ROUTES
+// ─────────────────────────────────────────────
+class AdminRoutes {
+  static const users = '/user-management';
+  static const products = '/product-management';
+  static const recipes = '/recipe-management';
+  static const challenges = '/challenge-management';
+  static const content = '/content-manager';
+  static const community = '/community-posts';
+  static const reports = '/reports-analytics';
+  static const ecoTips = '/eco-tips-manager';
+  static const feedback = '/feedback-queries';
+  static const profile = '/admin-profile';
 }
 
 // ─────────────────────────────────────────────
@@ -243,13 +275,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             const Divider(color: EcoColors.cardBorder),
             _drawerItem(Icons.dashboard_rounded, 'Dashboard', () => Navigator.pop(context)),
             _drawerItem(Icons.people_rounded, 'User Management',
-                () => Navigator.pushNamed(context, '/user-management')),
-            _drawerItem(Icons.eco_rounded, 'Eco Products',
-                () => Navigator.pushNamed(context, '/product-management')),
-            _drawerItem(Icons.restaurant_menu_rounded, 'Recipes',
-                () => Navigator.pushNamed(context, '/recipe-management')),
-            _drawerItem(Icons.emoji_events_rounded, 'Challenges',
-                () => Navigator.pushNamed(context, '/challenge-management')),
+                () => _goTo(AdminRoutes.users)),
+            _drawerItem(Icons.inventory_2_rounded, 'Product Management',
+                () => _goTo(AdminRoutes.products)),
+            _drawerItem(Icons.restaurant_menu_rounded, 'Recipe Management',
+                () => _goTo(AdminRoutes.recipes)),
+            _drawerItem(Icons.emoji_events_rounded, 'Challenge Management',
+                () => _goTo(AdminRoutes.challenges)),
+            _drawerItem(Icons.article_rounded, 'Content Manager',
+                () => _goTo(AdminRoutes.content)),
+            _drawerItem(Icons.forum_rounded, 'Community Posts',
+                () => _goTo(AdminRoutes.community)),
+            _drawerItem(Icons.bar_chart_rounded, 'Reports & Analytics',
+                () => _goTo(AdminRoutes.reports)),
+            _drawerItem(Icons.eco_rounded, 'Eco Tips Manager',
+                () => _goTo(AdminRoutes.ecoTips)),
+            _drawerItem(Icons.feedback_rounded, 'Feedback & Queries',
+                () => _goTo(AdminRoutes.feedback)),
+            _drawerItem(Icons.person_rounded, 'Admin Profile',
+                () => _goTo(AdminRoutes.profile)),
             const Spacer(),
             _drawerItem(Icons.logout_rounded, 'Sign Out', () async {
               await FirebaseAuth.instance.signOut();
@@ -269,6 +313,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               color: EcoColors.textPrimary, fontSize: 13)),
       onTap: onTap,
     );
+  }
+
+  void _goTo(String routeName) {
+    Navigator.pop(context);
+    Navigator.pushNamed(context, routeName);
   }
 
   // ── HEADER ──
@@ -738,7 +787,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         fontWeight: FontWeight.w600,
                         fontSize: 14)),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () => Navigator.pushNamed(context, AdminRoutes.reports),
                   child: Row(
                     children: [
                       Text('View All',
@@ -880,7 +929,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       fontWeight: FontWeight.w600,
                       fontSize: 12)),
               GestureDetector(
-                onTap: () {},
+                onTap: () => Navigator.pushNamed(context, AdminRoutes.reports),
                 child: Text('View All',
                     style: GoogleFonts.poppins(
                         color: EcoColors.accent, fontSize: 10)),
@@ -1002,7 +1051,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () =>
-                  Navigator.pushNamed(context, '/feedback-queries'),
+                  Navigator.pushNamed(context, AdminRoutes.feedback),
               style: ElevatedButton.styleFrom(
                 backgroundColor: EcoColors.accent,
                 foregroundColor: Colors.white,
@@ -1194,49 +1243,49 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           'title': 'User Management',
           'subtitle': 'Manage users and permissions',
           'icon': 'people',
-          'routeName': '/user-management',
+          'routeName': AdminRoutes.users,
         },
         {
           'title': 'Product Management',
           'subtitle': 'Add, edit and manage products',
           'icon': 'product',
-          'routeName': '/product-management',
+          'routeName': AdminRoutes.products,
         },
         {
           'title': 'Recipe Management',
           'subtitle': 'Manage healthy recipes',
           'icon': 'recipe',
-          'routeName': '/recipe-management',
+          'routeName': AdminRoutes.recipes,
         },
         {
           'title': 'Challenge Management',
           'subtitle': 'Create and manage eco challenges',
           'icon': 'challenge',
-          'routeName': '/challenge-management',
+          'routeName': AdminRoutes.challenges,
         },
         {
           'title': 'Content Manager',
           'subtitle': 'Manage educational content',
           'icon': 'content',
-          'routeName': '/content-manager',
+          'routeName': AdminRoutes.content,
         },
         {
           'title': 'Reports & Analytics',
           'subtitle': 'View reports and analytics',
           'icon': 'analytics',
-          'routeName': '/reports-analytics',
+          'routeName': AdminRoutes.reports,
         },
         {
           'title': 'Eco Tips Manager',
           'subtitle': 'Add and manage eco tips',
           'icon': 'eco',
-          'routeName': '/eco-tips-manager',
+          'routeName': AdminRoutes.ecoTips,
         },
         {
           'title': 'Feedback & Queries',
           'subtitle': 'View feedback and user queries',
           'icon': 'feedback',
-          'routeName': '/feedback-queries',
+          'routeName': AdminRoutes.feedback,
         },
       ];
 
@@ -1257,6 +1306,266 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           'time': '1h ago',
         },
       ];
+}
+
+
+// ─────────────────────────────────────────────
+// MANAGE USERS SCREEN
+// ─────────────────────────────────────────────
+class ManageUsersScreen extends StatefulWidget {
+  const ManageUsersScreen({super.key});
+
+  @override
+  State<ManageUsersScreen> createState() => _ManageUsersScreenState();
+}
+
+class _ManageUsersScreenState extends State<ManageUsersScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String searchText = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _filterUsers(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    if (searchText.trim().isEmpty) return docs;
+    final query = searchText.toLowerCase();
+
+    return docs.where((doc) {
+      final data = doc.data();
+      final name = (data['fullName'] ?? data['name'] ?? '').toString().toLowerCase();
+      final email = (data['email'] ?? '').toString().toLowerCase();
+      final role = (data['role'] ?? '').toString().toLowerCase();
+      return name.contains(query) || email.contains(query) || role.contains(query);
+    }).toList();
+  }
+
+  Future<void> _toggleBlock(String docId, bool blocked) async {
+    await FirebaseFirestore.instance.collection('users').doc(docId).update({
+      'blocked': !blocked,
+    });
+  }
+
+  Future<void> _deleteUser(String docId) async {
+    await FirebaseFirestore.instance.collection('users').doc(docId).delete();
+  }
+
+  void _confirmDelete(String docId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: EcoColors.card,
+        title: Text('Delete User?', style: GoogleFonts.poppins(color: EcoColors.textPrimary)),
+        content: Text(
+          'This will delete user data from Firestore only.',
+          style: GoogleFonts.poppins(color: EcoColors.textSecondary),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: EcoColors.negative),
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteUser(docId);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: EcoColors.bg,
+      appBar: AppBar(
+        backgroundColor: EcoColors.card,
+        iconTheme: const IconThemeData(color: EcoColors.accentLight),
+        title: Text(
+          'User Management',
+          style: GoogleFonts.poppins(
+            color: EcoColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          _searchBox(),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance.collection('users').orderBy('email').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) return const _LoadingWidget();
+                if (snapshot.hasError) return const _ErrorWidget();
+
+                final users = _filterUsers(snapshot.data?.docs ?? []);
+                if (users.isEmpty) return const _EmptyWidget(message: 'No users found');
+
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: users.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, index) {
+                    final doc = users[index];
+                    final data = doc.data();
+
+                    return _userCard(
+                      docId: doc.id,
+                      name: (data['fullName'] ?? data['name'] ?? 'Unknown User').toString(),
+                      email: (data['email'] ?? 'No email').toString(),
+                      role: (data['role'] ?? 'user').toString(),
+                      blocked: data['blocked'] == true,
+                      imageUrl: (data['profileImage'] ?? data['photoUrl'] ?? '').toString(),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _searchBox() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: EcoColors.glassWhite,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: EcoColors.glassBorder),
+            ),
+            child: TextField(
+              controller: _searchController,
+              style: GoogleFonts.poppins(color: EcoColors.textPrimary),
+              onChanged: (value) => setState(() => searchText = value),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                icon: const Icon(Icons.search_rounded, color: EcoColors.accentLight),
+                hintText: 'Search users by name, email or role',
+                hintStyle: GoogleFonts.poppins(color: const Color(0xFF5C7A5E), fontSize: 12),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _userCard({
+    required String docId,
+    required String name,
+    required String email,
+    required String role,
+    required bool blocked,
+    required String imageUrl,
+  }) {
+    final isAdmin = role.toLowerCase() == 'admin';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: EcoColors.glassWhite,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: EcoColors.glassBorder),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: EcoColors.iconBg,
+            backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+            child: imageUrl.isEmpty
+                ? const Icon(Icons.person_rounded, color: EcoColors.accentLight)
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: EcoColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(color: const Color(0xFF5C7A5E), fontSize: 10),
+                ),
+                const SizedBox(height: 7),
+                Row(
+                  children: [
+                    _badge(isAdmin ? 'Admin' : 'User', isAdmin ? Colors.deepPurpleAccent : EcoColors.accent),
+                    const SizedBox(width: 6),
+                    _badge(blocked ? 'Blocked' : 'Active', blocked ? EcoColors.negative : EcoColors.positive),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton<String>(
+            color: EcoColors.card,
+            iconColor: EcoColors.accentLight,
+            onSelected: (value) {
+              if (value == 'block') _toggleBlock(docId, blocked);
+              if (value == 'delete') _confirmDelete(docId);
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'block',
+                child: Text(blocked ? 'Unblock' : 'Block',
+                    style: GoogleFonts.poppins(color: EcoColors.textPrimary)),
+              ),
+              if (!isAdmin)
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Delete', style: GoogleFonts.poppins(color: EcoColors.negative)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _badge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          color: color,
+          fontSize: 8.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────

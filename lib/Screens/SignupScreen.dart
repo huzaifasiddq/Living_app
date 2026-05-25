@@ -213,7 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            'Sustainable\nLiving Guide',
+                            'EcoSphere',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.playfairDisplay(
                               fontSize: size.width * 0.09,

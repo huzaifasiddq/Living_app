@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:my_app/Screens/HomeScreen.dart';
 import 'package:my_app/Screens/LoginScreen.dart';
 import 'package:my_app/Screens/SignupScreen.dart';
+import 'package:my_app/Screens/WasteReductionTrackerScreen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +17,7 @@ class EatcnobityApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Eatcnobity Dartome',
+      title: 'EcoSphere',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
       home: const SplashScreen(),
@@ -127,7 +128,7 @@ class _SplashScreenState extends State<SplashScreen>
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 800),
-          pageBuilder: (_, __, ___) => const SignupScreen(),
+          pageBuilder: (_, __, ___) => const LoginScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
         ),
@@ -279,8 +280,8 @@ class _SplashScreenState extends State<SplashScreen>
     );
     return Column(
       children: [
-        Text('Eatcnobity', style: style, textAlign: TextAlign.center),
-        Text('Dartome', style: style, textAlign: TextAlign.center),
+        Text('Ecosphere', style: style, textAlign: TextAlign.center),
+     
       ],
     );
   }

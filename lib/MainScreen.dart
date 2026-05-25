@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/Screens/CarbonTrackerScreen.dart';
-
 import 'package:my_app/Screens/HomeScreen.dart';
 import 'package:my_app/Screens/ProfileScreen.dart';
-// import 'package:my_app/Screens/TrackerScreen.dart';
-// import 'package:my_app/Screens/CommunityScreen.dart';
-// import 'package:my_app/Screens/RecipeScreen.dart';
+import 'package:my_app/Screens/WasteReductionTrackerScreen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -26,19 +23,19 @@ class _MainScreenState extends State<MainScreen> {
       inactiveIcon: Icons.home_outlined,
     ),
     _NavItem(
-      label: 'Track',
+      label: 'Carbon',
       activeIcon: Icons.bar_chart_rounded,
       inactiveIcon: Icons.bar_chart_outlined,
+    ),
+    _NavItem(
+      label: 'Waste',
+      activeIcon: Icons.recycling_rounded,
+      inactiveIcon: Icons.recycling_outlined,
     ),
     _NavItem(
       label: 'Community',
       activeIcon: Icons.group_rounded,
       inactiveIcon: Icons.group_outlined,
-    ),
-    _NavItem(
-      label: 'Recipe',
-      activeIcon: Icons.eco_rounded,
-      inactiveIcon: Icons.eco_outlined,
     ),
     _NavItem(
       label: 'Profile',
@@ -50,8 +47,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = const [
     HomeScreen(),
     CarbonTrackerScreen(),
+    WasteReductionTrackerScreen(),
     PlaceholderPage(title: 'Community'),
-    PlaceholderPage(title: 'Recipe'),
     ProfileScreen(),
   ];
 
@@ -85,19 +82,77 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  void _openDrawerPage(int index) {
+    Navigator.pop(context);
+    _onTabTapped(index);
+  }
+
+  void _openRoute(String routeName) {
+    Navigator.pop(context);
+    Navigator.pushNamed(context, routeName);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _pageBgColors[_selectedIndex],
       extendBody: true,
-      body: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
-        color: _pageBgColors[_selectedIndex],
-        child: PageView(
-          controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          children: _pages,
-        ),
+      drawer: AppDrawer(
+        onPageSelected: _openDrawerPage,
+        onRouteSelected: _openRoute,
+      ),
+      body: Stack(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 350),
+            color: _pageBgColors[_selectedIndex],
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: _pages,
+            ),
+          ),
+
+          if (_selectedIndex == 0)
+            Builder(
+              builder: (drawerContext) {
+                return SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+  left: 14,
+  top: MediaQuery.of(context).padding.top + 18,
+),
+                    child: InkWell(
+                      onTap: () {
+                        Scaffold.of(drawerContext).openDrawer();
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: 38,
+height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.88),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.menu_rounded,
+                          color: Color(0xFF2E7D32),
+                          size: 23,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
       ),
       bottomNavigationBar: SafeArea(
         child: _FloatingNavBar(
@@ -106,6 +161,175 @@ class _MainScreenState extends State<MainScreen> {
           onTap: _onTabTapped,
         ),
       ),
+    );
+  }
+}
+
+class AppDrawer extends StatelessWidget {
+  final ValueChanged<int> onPageSelected;
+  final ValueChanged<String> onRouteSelected;
+
+  const AppDrawer({
+    super.key,
+    required this.onPageSelected,
+    required this.onRouteSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: const Color(0xFFF3FBF1),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF1B5E20),
+                    Color(0xFF43A047),
+                    Color(0xFF66BB6A),
+                  ],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CircleAvatar(
+                    radius: 34,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.eco_rounded,
+                      color: Color(0xFF2E7D32),
+                      size: 38,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'EcoSphere',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Sustainable Living Guide',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12.5,
+                      color: Colors.white.withOpacity(0.88),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            _drawerItem(
+              icon: Icons.home_rounded,
+              title: 'Home',
+              onTap: () => onPageSelected(0),
+            ),
+            _drawerItem(
+              icon: Icons.co2_rounded,
+              title: 'Carbon Footprint Tracker',
+              onTap: () => onPageSelected(1),
+            ),
+            _drawerItem(
+              icon: Icons.recycling_rounded,
+              title: 'Waste Reduction Tracker',
+              onTap: () => onPageSelected(2),
+            ),
+            _drawerItem(
+              icon: Icons.groups_rounded,
+              title: 'Community Forum',
+              onTap: () => onPageSelected(3),
+            ),
+            _drawerItem(
+              icon: Icons.person_rounded,
+              title: 'Profile',
+              onTap: () => onPageSelected(4),
+            ),
+
+            const Divider(height: 22),
+
+            _drawerItem(
+              icon: Icons.shopping_bag_rounded,
+              title: 'Eco Products',
+              onTap: () => onRouteSelected('/ecoProducts'),
+              isRoute: true,
+            ),
+            _drawerItem(
+              icon: Icons.restaurant_rounded,
+              title: 'Sustainable Recipes',
+              onTap: () => onRouteSelected('/recipes'),
+              isRoute: true,
+            ),
+            _drawerItem(
+              icon: Icons.emoji_events_rounded,
+              title: 'Green Challenges',
+              onTap: () => onRouteSelected('/challenges'),
+              isRoute: true,
+            ),
+            _drawerItem(
+              icon: Icons.menu_book_rounded,
+              title: 'Educational Content',
+              onTap: () => onRouteSelected('/education'),
+              isRoute: true,
+            ),
+            _drawerItem(
+              icon: Icons.flight_takeoff_rounded,
+              title: 'Eco Travel',
+              onTap: () => onRouteSelected('/ecoTravel'),
+              isRoute: true,
+            ),
+
+            const Spacer(),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Small steps, big impact 🌿',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: const Color(0xFF2E7D32),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isRoute = false,
+  }) {
+    return ListTile(
+      dense: true,
+      leading: Icon(icon, color: const Color(0xFF2E7D32)),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF1B5E20),
+        ),
+      ),
+      trailing: Icon(
+        isRoute ? Icons.open_in_new_rounded : Icons.chevron_right_rounded,
+        color: const Color(0xFF66BB6A),
+        size: 17,
+      ),
+      onTap: onTap,
     );
   }
 }
@@ -254,10 +478,8 @@ class _NavBarItemState extends State<_NavBarItem>
                       ? const Color(0xFF7BC043)
                       : const Color(0xFFADB5BD),
                 ),
-
                 if (widget.isSelected) ...[
                   const SizedBox(width: 3),
-
                   Text(
                     widget.item.label,
                     maxLines: 1,

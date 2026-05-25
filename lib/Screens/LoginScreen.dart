@@ -1,8 +1,10 @@
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_app/Admin/AdminDashboard.dart';
 import 'package:my_app/MainScreen.dart';
 
 import 'package:my_app/Screens/SignupScreen.dart';
@@ -104,64 +106,81 @@ class _LoginScreenState extends State<LoginScreen>
   // ───────────────── LOGIN FUNCTION ─────────────────
 
   void _handleLogin() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
+  final email = _emailController.text.trim();
+  final password = _passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please enter email and password',
-          ),
+  if (email.isEmpty || password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please enter email and password'),
+      ),
+    );
+    return;
+  }
+
+  setState(() => _isLoading = true);
+
+  try {
+    final credential =
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    final uid = credential.user!.uid;
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    final role = userDoc.data()?['role'] ?? 'user';
+
+    if (!mounted) return;
+
+    if (role == 'admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AdminDashboardScreen(),
         ),
       );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (!mounted) return;
-
+    } else {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => const MainScreen(),
         ),
       );
-    } on FirebaseAuthException catch (e) {
-      String message = 'Login failed';
+    }
+  } on FirebaseAuthException catch (e) {
+    String message = 'Login failed';
 
-      if (e.code == 'user-not-found') {
-        message = 'No user found with this email';
-      } else if (e.code == 'wrong-password') {
-        message = 'Incorrect password';
-      } else if (e.code == 'invalid-email') {
-        message = 'Invalid email address';
-      } else if (e.code == 'invalid-credential') {
-        message = 'Invalid email or password';
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong'),
-        ),
-      );
+    if (e.code == 'user-not-found') {
+      message = 'No user found with this email';
+    } else if (e.code == 'wrong-password') {
+      message = 'Incorrect password';
+    } else if (e.code == 'invalid-email') {
+      message = 'Invalid email address';
+    } else if (e.code == 'invalid-credential') {
+      message = 'Invalid email or password';
     }
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Something went wrong'),
+      ),
+    );
   }
+
+  if (mounted) {
+    setState(() => _isLoading = false);
+  }
+}
 
   // ─────────────────────────────────────────────
 
@@ -241,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen>
                               const SizedBox(height: 14),
 
                               Text(
-                                'Sustainable\nLiving Guide',
+                                'Ecosphere',
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.poppins(
                                   fontSize: 28,

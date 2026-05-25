@@ -46,46 +46,67 @@ class HomeScreen extends StatelessWidget {
         .snapshots();
   }
 
+  double _toDouble(dynamic value, double fallback) {
+    if (value == null) return fallback;
+    if (value is int) return value.toDouble();
+    if (value is double) return value;
+    if (value is String) return double.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  int _toInt(dynamic value, int fallback) {
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
   @override
   Widget build(BuildContext context) {
     final stream = _userStream;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F8F1),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            _buildHeader(stream),
-            _buildMainCard(),
-            const SizedBox(height: 115),
-          ],
-        ),
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: stream,
+        builder: (context, snapshot) {
+          final data = snapshot.data?.data() ?? {};
+
+          final userName = data['fullName'] ?? data['name'] ?? 'User';
+          final photoUrl = data['profileImage'] ?? data['profileImageUrl'] ?? data['photoURL'];
+
+          final carbonFootprint = _toDouble(data['carbonFootprint'], 2.45);
+          final carbonProgress = _toDouble(data['carbonProgress'], 0.72);
+          final carbonChange = _toInt(data['carbonChange'], 18);
+
+          final wasteDiverted = _toDouble(data['wasteDiverted'], 0.68);
+          final wasteProgress = _toDouble(data['wasteProgress'], 0.45);
+          final wasteChange = _toInt(data['wasteChange'], 12);
+
+          final dailyGoalProgress =
+              _toDouble(data['dailyGoalProgress'], 0.75);
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                _headerUI(userName: userName, photoUrl: photoUrl),
+                _buildMainCard(
+                  carbonFootprint: carbonFootprint,
+                  carbonProgress: carbonProgress,
+                  carbonChange: carbonChange,
+                  wasteDiverted: wasteDiverted,
+                  wasteProgress: wasteProgress,
+                  wasteChange: wasteChange,
+                  dailyGoalProgress: dailyGoalProgress,
+                ),
+                const SizedBox(height: 115),
+              ],
+            ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildHeader(Stream<DocumentSnapshot<Map<String, dynamic>>>? stream) {
-    if (stream == null) {
-      return _headerUI(userName: 'Guest User', photoUrl: null);
-    }
-
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: stream,
-      builder: (context, snapshot) {
-        String userName = 'User';
-        String? photoUrl;
-
-        if (snapshot.hasData && snapshot.data!.exists) {
-          final data = snapshot.data!.data();
-
-          userName = data?['fullName'] ?? data?['name'] ?? 'User';
-
-          photoUrl = data?['profileImage'];
-        }
-
-        return _headerUI(userName: userName, photoUrl: photoUrl);
-      },
     );
   }
 
@@ -95,14 +116,10 @@ class HomeScreen extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
+          Image.asset(
             bgImage,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) {
-              return Container(color: const Color(0xFF1B5E20));
-            },
           ),
-
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -114,7 +131,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -124,7 +140,6 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       _ProfileAvatar(photoUrl: photoUrl),
                       const SizedBox(width: 12),
-
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +179,6 @@ class HomeScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-
                       Container(
                         width: 42,
                         height: 42,
@@ -183,9 +197,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 28),
-
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -253,7 +265,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMainCard() {
+  Widget _buildMainCard({
+    required double carbonFootprint,
+    required double carbonProgress,
+    required int carbonChange,
+    required double wasteDiverted,
+    required double wasteProgress,
+    required int wasteChange,
+    required double dailyGoalProgress,
+  }) {
     return Transform.translate(
       offset: const Offset(0, -95),
       child: Container(
@@ -272,9 +292,16 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
           child: Column(
             children: [
-              _buildImpactSection(),
+              _buildImpactSection(
+                carbonFootprint: carbonFootprint,
+                carbonProgress: carbonProgress,
+                carbonChange: carbonChange,
+                wasteDiverted: wasteDiverted,
+                wasteProgress: wasteProgress,
+                wasteChange: wasteChange,
+              ),
               const SizedBox(height: 18),
-              _buildDailyGoalSection(),
+              _buildDailyGoalSection(dailyGoalProgress),
               const SizedBox(height: 20),
               _buildExploreSection(),
               const SizedBox(height: 18),
@@ -315,7 +342,14 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImpactSection() {
+  Widget _buildImpactSection({
+    required double carbonFootprint,
+    required double carbonProgress,
+    required int carbonChange,
+    required double wasteDiverted,
+    required double wasteProgress,
+    required int wasteChange,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -327,10 +361,10 @@ class HomeScreen extends StatelessWidget {
               child: _buildMetricCard(
                 icon: '🏭',
                 label: 'Carbon Footprint',
-                value: '2.45 kg',
+                value: '${carbonFootprint.toStringAsFixed(2)} kg',
                 unit: 'CO₂ today',
-                progress: 0.72,
-                change: '↓ 18% vs yesterday',
+                progress: carbonProgress.clamp(0.0, 1.0),
+                change: '↓ $carbonChange% vs yesterday',
                 color: const Color(0xFF2E7D32),
               ),
             ),
@@ -339,10 +373,10 @@ class HomeScreen extends StatelessWidget {
               child: _buildMetricCard(
                 icon: '♻️',
                 label: 'Waste Diverted',
-                value: '0.68 kg',
+                value: '${wasteDiverted.toStringAsFixed(2)} kg',
                 unit: 'From landfill',
-                progress: 0.45,
-                change: '↑ 12% vs yesterday',
+                progress: wasteProgress.clamp(0.0, 1.0),
+                change: '↑ $wasteChange% vs yesterday',
                 color: const Color(0xFF00897B),
               ),
             ),
@@ -436,7 +470,9 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDailyGoalSection() {
+  Widget _buildDailyGoalSection(double progress) {
+    final percent = (progress.clamp(0.0, 1.0) * 100).round();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _whiteCardDecoration(),
@@ -463,7 +499,7 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '75%',
+                  '$percent%',
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -476,11 +512,13 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 13),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: const LinearProgressIndicator(
-              value: 0.75,
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
               minHeight: 8,
-              backgroundColor: Color(0xFFE8F5E9),
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
+              backgroundColor: const Color(0xFFE8F5E9),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF43A047),
+              ),
             ),
           ),
           const SizedBox(height: 16),

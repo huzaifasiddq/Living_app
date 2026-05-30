@@ -11,16 +11,15 @@ import 'package:intl/intl.dart';
 //  CONSTANTS
 // ─────────────────────────────────────────────
 class _C {
-  static const green1 = Color(0xFF1B4332);
-  static const green2 = Color(0xFF2D6A4F);
-  static const green3 = Color(0xFF40916C);
-  static const green4 = Color(0xFF52B788);
-  static const green5 = Color(0xFF95D5B2);
-  static const green6 = Color(0xFFD8F3DC);
-  static const bg = Color(0xFFF0F7F0);
+  static const green1 = Color(0xFF1B5E20);
+  static const green2 = Color(0xFF2E7D32);
+  static const green3 = Color(0xFF43A047);
+  static const green4 = Color(0xFF66BB6A);
+  static const green5 = Color(0xFFA5D6A7);
+  static const green6 = Color(0xFFE8F5E9);
+  static const bg = Color(0xFFF1F8F1);
   static const card = Colors.white;
 
-  // Emission factors
   static const transport = {
     'Car': 0.21,
     'Bus': 0.08,
@@ -28,12 +27,14 @@ class _C {
     'Train': 0.05,
     'Walking': 0.0,
   };
+
   static const food = {
     'Vegetarian': 2.0,
     'Vegan': 1.5,
     'Mixed': 3.5,
     'Meat Heavy': 5.0,
   };
+
   static const electricFactor = 0.4;
 }
 
@@ -41,7 +42,9 @@ class _C {
 //  ENTRY WIDGET
 // ─────────────────────────────────────────────
 class CarbonTrackerScreen extends StatefulWidget {
-  const CarbonTrackerScreen({super.key});
+  final VoidCallback? onBackTap;
+
+  const CarbonTrackerScreen({super.key, this.onBackTap});
 
   @override
   State<CarbonTrackerScreen> createState() => _CarbonTrackerScreenState();
@@ -226,7 +229,13 @@ class _CarbonTrackerScreenState extends State<CarbonTrackerScreen>
                 children: [
                   _CircleBtn(
                     icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.of(context).maybePop(),
+                    onTap: () {
+                      if (widget.onBackTap != null) {
+                        widget.onBackTap!();
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    },
                   ),
                   const Spacer(),
                   Column(
@@ -319,7 +328,7 @@ class _CarbonTrackerScreenState extends State<CarbonTrackerScreen>
                             right: 0,
                             bottom: 0,
                             child: Image.asset(
-                              'assets/images/leaf_bg.jpg',
+                              'assets/images/eco_leaf_bg.jpg',
                               width: 40,
                               errorBuilder: (_, __, ___) => const Icon(
                                 Icons.eco,
@@ -428,7 +437,7 @@ class _CarbonTrackerScreenState extends State<CarbonTrackerScreen>
                         ),
                       )
                     : Image.asset(
-                        'assets/images/eco_leaf.png',
+                        'assets/images/eco_leaf.jpg',
                         width: 20,
                         errorBuilder: (_, __, ___) => const Icon(
                           Icons.eco,

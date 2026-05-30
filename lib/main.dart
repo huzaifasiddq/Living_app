@@ -6,7 +6,7 @@ import 'package:my_app/Admin/AdminDashboard.dart';
 import 'package:my_app/Admin/ManageChallengesScreen.dart';
 import 'package:my_app/Admin/ManageProductsScreen.dart';
 import 'package:my_app/Admin/ManageRecipesScreen.dart';
-import 'package:my_app/MainScreen.dart';
+import 'package:my_app/Screens/CommunityScreen.dart';
 import 'package:my_app/Screens/LoginScreen.dart';
 import 'package:my_app/Screens/ProfileScreen.dart';
 import 'package:my_app/Screens/SplashScreen.dart';
@@ -47,8 +47,7 @@ class EatcnobityApp extends StatelessWidget {
         '/challenge-management': (_) => const ManageChallengesScreen(),
         '/content-manager': (_) =>
             const PlaceholderScreen(title: 'Content Manager'),
-        '/community-posts': (_) =>
-            const PlaceholderScreen(title: 'Community Posts'),
+        '/community-posts': (_) => const CommunityScreen(),
         '/reports-analytics': (_) =>
             const PlaceholderScreen(title: 'Reports & Analytics'),
         '/eco-tips-manager': (_) =>

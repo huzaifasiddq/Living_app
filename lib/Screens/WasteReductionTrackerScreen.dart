@@ -26,7 +26,9 @@ const Map<String, double> kWeightFactors = {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 class WasteReductionTrackerScreen extends StatefulWidget {
-  const WasteReductionTrackerScreen({super.key});
+  final VoidCallback? onBackTap;
+
+  const WasteReductionTrackerScreen({super.key, this.onBackTap});
 
   @override
   State<WasteReductionTrackerScreen> createState() =>
@@ -103,7 +105,11 @@ class _WasteReductionTrackerScreenState
     final paper = _quantities['paper']! * 0.05;
     final metal = _quantities['aluminumCans']! * 0.03;
     final organic = _quantities['compost']! * 0.08;
-    final total = plastic + paper + metal + organic +
+    final total =
+        plastic +
+        paper +
+        metal +
+        organic +
         _quantities['reusableItems']! * 0.01;
     if (total == 0) return 0;
     final recycled = plastic + paper + metal + organic;
@@ -132,15 +138,18 @@ class _WasteReductionTrackerScreenState
       final wasteSaved = _calcWasteSaved();
       final recyclePercent = _calcRecyclePercent();
       final now = DateTime.now();
-      final dayKey = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-          [now.weekday - 1];
+      final dayKey = [
+        'mon',
+        'tue',
+        'wed',
+        'thu',
+        'fri',
+        'sat',
+        'sun',
+      ][now.weekday - 1];
 
       // Save waste record
-      await _db
-          .collection('users')
-          .doc(_uid)
-          .collection('wasteRecords')
-          .add({
+      await _db.collection('users').doc(_uid).collection('wasteRecords').add({
         'date': Timestamp.now(),
         'plasticBottles': _quantities['plasticBottles'],
         'paper': _quantities['paper'],
@@ -233,9 +242,18 @@ class _WasteReductionTrackerScreenState
       child: Row(
         children: [
           _glassButton(
-            child: const Icon(Icons.arrow_back_ios_new_rounded,
-                size: 18, color: kPrimary),
-            onTap: () => Navigator.maybePop(context),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: kPrimary,
+            ),
+            onTap: () {
+              if (widget.onBackTap != null) {
+                widget.onBackTap!();
+              } else {
+                Navigator.pop(context);
+              }
+            },
           ),
           Expanded(
             child: Column(
@@ -315,15 +333,20 @@ class _WasteReductionTrackerScreenState
         if (snap.hasData && snap.data!.docs.isNotEmpty) {
           final docs = snap.data!.docs;
           recycled = docs.fold<double>(
-              0, (s, d) => s + (d['plasticBottles'] ?? 0) + (d['paper'] ?? 0));
+            0,
+            (s, d) => s + (d['plasticBottles'] ?? 0) + (d['paper'] ?? 0),
+          );
           plastic = docs.fold<double>(
-              0,
-              (s, d) =>
-                  s +
-                  ((d['plasticBottles'] ?? 0) as num) * 0.02 +
-                  ((d['paper'] ?? 0) as num) * 0.05);
+            0,
+            (s, d) =>
+                s +
+                ((d['plasticBottles'] ?? 0) as num) * 0.02 +
+                ((d['paper'] ?? 0) as num) * 0.05,
+          );
           wasteSaved = docs.fold<double>(
-              0, (s, d) => s + ((d['wasteSaved'] ?? 0) as num));
+            0,
+            (s, d) => s + ((d['wasteSaved'] ?? 0) as num),
+          );
           recycled = recycled.clamp(0, 9999);
           plastic = double.parse(plastic.toStringAsFixed(2));
           wasteSaved = double.parse(wasteSaved.toStringAsFixed(1));
@@ -395,8 +418,7 @@ class _WasteReductionTrackerScreenState
                                   _summaryItem(
                                     icon: Icons.recycling_rounded,
                                     label: 'Recycled Items',
-                                    value:
-                                        '${recycled.toInt()}',
+                                    value: '${recycled.toInt()}',
                                     unit: 'items',
                                     percent: '+24%',
                                   ),
@@ -433,11 +455,8 @@ class _WasteReductionTrackerScreenState
     );
   }
 
-  Widget _summaryDivider() => Container(
-        width: 1,
-        height: 60,
-        color: Colors.white.withOpacity(0.2),
-      );
+  Widget _summaryDivider() =>
+      Container(width: 1, height: 60, color: Colors.white.withOpacity(0.2));
 
   Widget _summaryItem({
     required IconData icon,
@@ -493,8 +512,11 @@ class _WasteReductionTrackerScreenState
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.arrow_upward_rounded,
-                  color: Color(0xFFA5D6A7), size: 12),
+              const Icon(
+                Icons.arrow_upward_rounded,
+                color: Color(0xFFA5D6A7),
+                size: 12,
+              ),
               Text(
                 percent,
                 style: GoogleFonts.poppins(
@@ -610,8 +632,11 @@ class _WasteReductionTrackerScreenState
               color: (item['color'] as Color).withOpacity(0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(item['icon'] as IconData,
-                color: item['color'] as Color, size: 20),
+            child: Icon(
+              item['icon'] as IconData,
+              color: item['color'] as Color,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -628,10 +653,7 @@ class _WasteReductionTrackerScreenState
                 ),
                 Text(
                   item['subtitle'] as String,
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: kTextGrey,
-                  ),
+                  style: GoogleFonts.poppins(fontSize: 10, color: kTextGrey),
                 ),
               ],
             ),
@@ -681,16 +703,18 @@ class _WasteReductionTrackerScreenState
               child: DropdownButton<String>(
                 value: _units[key],
                 isDense: true,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 14, color: kTextGrey),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 14,
+                  color: kTextGrey,
+                ),
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   color: kTextDark,
                   fontWeight: FontWeight.w500,
                 ),
                 items: units
-                    .map((u) =>
-                        DropdownMenuItem(value: u, child: Text(u)))
+                    .map((u) => DropdownMenuItem(value: u, child: Text(u)))
                     .toList(),
                 onChanged: (v) => setState(() => _units[key] = v!),
               ),
@@ -876,10 +900,7 @@ class _WasteReductionTrackerScreenState
                     ),
                     Text(
                       'Recycled',
-                      style: GoogleFonts.poppins(
-                        fontSize: 8,
-                        color: kTextGrey,
-                      ),
+                      style: GoogleFonts.poppins(fontSize: 8, color: kTextGrey),
                     ),
                   ],
                 ),
@@ -904,8 +925,7 @@ class _WasteReductionTrackerScreenState
                   const SizedBox(width: 4),
                   Text(
                     labels[i],
-                    style: GoogleFonts.poppins(
-                        fontSize: 9, color: kTextGrey),
+                    style: GoogleFonts.poppins(fontSize: 9, color: kTextGrey),
                   ),
                   const Spacer(),
                   Text(
@@ -945,8 +965,13 @@ class _WasteReductionTrackerScreenState
         } else {
           // Demo data
           vals = {
-            'mon': 4.2, 'tue': 3.8, 'wed': 5.1,
-            'thu': 4.5, 'fri': 3.9, 'sat': 6.2, 'sun': 8.6,
+            'mon': 4.2,
+            'tue': 3.8,
+            'wed': 5.1,
+            'thu': 4.5,
+            'fri': 3.9,
+            'sat': 6.2,
+            'sun': 8.6,
           };
         }
 
@@ -995,8 +1020,11 @@ class _WasteReductionTrackerScreenState
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.arrow_upward_rounded,
-                              color: kPrimaryLight, size: 10),
+                          const Icon(
+                            Icons.arrow_upward_rounded,
+                            color: kPrimaryLight,
+                            size: 10,
+                          ),
                           Text(
                             '21%',
                             style: GoogleFonts.poppins(
@@ -1045,11 +1073,14 @@ class _WasteReductionTrackerScreenState
                         ),
                       ),
                       leftTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     gridData: const FlGridData(show: false),
                     borderData: FlBorderData(show: false),
@@ -1062,7 +1093,8 @@ class _WasteReductionTrackerScreenState
                             toY: vals[keys[i]]!,
                             width: 10,
                             borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(6)),
+                              top: Radius.circular(6),
+                            ),
                             gradient: LinearGradient(
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
@@ -1097,8 +1129,7 @@ class _WasteReductionTrackerScreenState
         String reductionPercent = '30%';
 
         if (snap.hasData && snap.data!.docs.isNotEmpty) {
-          final d =
-              snap.data!.docs.first.data() as Map<String, dynamic>;
+          final d = snap.data!.docs.first.data() as Map<String, dynamic>;
           tipText = d['text'] ?? tipText;
           reductionPercent = '${d['reductionPercent'] ?? 30}%';
         }
@@ -1129,8 +1160,11 @@ class _WasteReductionTrackerScreenState
                     color: kPrimary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.eco_rounded,
-                      color: kPrimary, size: 24),
+                  child: const Icon(
+                    Icons.eco_rounded,
+                    color: kPrimary,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1172,8 +1206,11 @@ class _WasteReductionTrackerScreenState
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: kTextGrey),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: kTextGrey,
+                ),
               ],
             ),
           ),
@@ -1273,8 +1310,7 @@ class _WasteReductionTrackerScreenState
                   scrollDirection: Axis.horizontal,
                   itemCount: achievements.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, i) =>
-                      _achievementBadge(achievements[i]),
+                  itemBuilder: (_, i) => _achievementBadge(achievements[i]),
                 ),
               );
             },
@@ -1348,10 +1384,7 @@ class _WasteReductionTrackerScreenState
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 8,
-              color: kTextGrey,
-            ),
+            style: GoogleFonts.poppins(fontSize: 8, color: kTextGrey),
           ),
         ],
       ),

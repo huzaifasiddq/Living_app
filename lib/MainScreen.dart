@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_app/Admin/ManageCommunityPostsScreen.dart';
 import 'package:my_app/Screens/CarbonTrackerScreen.dart';
+import 'package:my_app/Screens/CommunityScreen.dart';
 import 'package:my_app/Screens/HomeScreen.dart';
 import 'package:my_app/Screens/ProfileScreen.dart';
 import 'package:my_app/Screens/WasteReductionTrackerScreen.dart';
@@ -13,6 +15,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
   late final PageController _pageController;
 
@@ -44,13 +47,7 @@ class _MainScreenState extends State<MainScreen> {
     ),
   ];
 
-  final List<Widget> _pages = const [
-    HomeScreen(),
-    CarbonTrackerScreen(),
-    WasteReductionTrackerScreen(),
-    PlaceholderPage(title: 'Community'),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _pages;
 
   final List<Color> _pageBgColors = const [
     Color(0xFFF0FAE8),
@@ -60,10 +57,22 @@ class _MainScreenState extends State<MainScreen> {
     Color(0xFFF8EEFF),
   ];
 
-  @override
   void initState() {
     super.initState();
+
     _pageController = PageController(initialPage: _selectedIndex);
+
+    _pages = [
+      HomeScreen(
+        onMenuTap: () {
+          _scaffoldKey.currentState?.openDrawer();
+        },
+      ),
+      CarbonTrackerScreen(onBackTap: () => _onTabTapped(0)),
+      WasteReductionTrackerScreen(onBackTap: () => _onTabTapped(0)),
+      CommunityScreen(onBackTap: () => _onTabTapped(0)),
+      ProfileScreen(onBackTap: () => _onTabTapped(0)),
+    ];
   }
 
   @override
@@ -95,6 +104,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: _pageBgColors[_selectedIndex],
       extendBody: true,
       drawer: AppDrawer(
@@ -112,46 +122,6 @@ class _MainScreenState extends State<MainScreen> {
               children: _pages,
             ),
           ),
-
-          if (_selectedIndex == 0)
-            Builder(
-              builder: (drawerContext) {
-                return SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-  left: 14,
-  top: MediaQuery.of(context).padding.top + 18,
-),
-                    child: InkWell(
-                      onTap: () {
-                        Scaffold.of(drawerContext).openDrawer();
-                      },
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        width: 38,
-height: 38,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.88),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.menu_rounded,
-                          color: Color(0xFF2E7D32),
-                          size: 23,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
         ],
       ),
       bottomNavigationBar: SafeArea(

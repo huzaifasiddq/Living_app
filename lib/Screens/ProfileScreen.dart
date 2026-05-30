@@ -22,7 +22,12 @@ const String kCloudinaryFolder = 'eco_profile_images';
 //  ECO PROFILE SCREEN
 // ─────────────────────────────────────────────
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback? onBackTap;
+
+  const ProfileScreen({
+    super.key,
+    this.onBackTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +37,11 @@ class ProfileScreen extends StatelessWidget {
       stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-        return _EcoProfileView(uid: uid, data: data);
+        return _EcoProfileView(
+          uid: uid,
+          data: data,
+          onBackTap: onBackTap,
+        );
       },
     );
   }
@@ -42,15 +51,20 @@ class ProfileScreen extends StatelessWidget {
 //  MAIN VIEW
 // ─────────────────────────────────────────────
 class _EcoProfileView extends StatelessWidget {
-  const _EcoProfileView({required this.uid, required this.data});
+  const _EcoProfileView({
+    required this.uid,
+    required this.data,
+    this.onBackTap,
+  });
 
   final String uid;
   final Map<String, dynamic> data;
+  final VoidCallback? onBackTap;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F7F0),
+      backgroundColor: const Color(0xFFF1F8F1),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -59,7 +73,7 @@ class _EcoProfileView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Header ──
-              _HeaderSection(uid: uid, data: data),
+              _HeaderSection(uid: uid, data: data, onBackTap: onBackTap),
               const SizedBox(height: 20),
 
               // ── Sustainability Score ──
@@ -95,7 +109,7 @@ class _EcoProfileView extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 16),
                 child: _AchievementsSection(uid: uid),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 120),
             ],
           ),
         ),
@@ -108,10 +122,15 @@ class _EcoProfileView extends StatelessWidget {
 //  HEADER SECTION
 // ─────────────────────────────────────────────
 class _HeaderSection extends StatelessWidget {
-  const _HeaderSection({required this.uid, required this.data});
+  const _HeaderSection({
+    required this.uid,
+    required this.data,
+    this.onBackTap,
+  });
 
   final String uid;
   final Map<String, dynamic> data;
+  final VoidCallback? onBackTap;
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +154,7 @@ class _HeaderSection extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFF2D6A4F), Color(0xFF52B788), Color(0xFF95D5B2)],
+                      colors: [Color(0xFF2E7D32), Color(0xFF66BB6A), Color(0xFFA5D6A7)],
                     ),
                   ),
                 ),
@@ -161,17 +180,13 @@ class _HeaderSection extends StatelessWidget {
             left: 12,
             child: _GlassButton(
               icon: Icons.arrow_back_ios_new_rounded,
-              onTap: () => Navigator.of(context).maybePop(),
-            ),
-          ),
-
-          // Settings button
-          Positioned(
-            top: 12,
-            right: 12,
-            child: _GlassButton(
-              icon: Icons.settings_outlined,
-              onTap: () {},
+              onTap: () {
+                if (onBackTap != null) {
+                  onBackTap!();
+                } else {
+                  Navigator.of(context).maybePop();
+                }
+              },
             ),
           ),
 
@@ -217,7 +232,7 @@ class _HeaderSection extends StatelessWidget {
                         width: 24,
                         height: 24,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF40916C),
+                          color: Color(0xFF43A047),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.eco, color: Colors.white, size: 14),
@@ -285,7 +300,7 @@ class _HeaderSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF40916C).withOpacity(0.9),
+                    color: const Color(0xFF43A047).withOpacity(0.9),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -386,7 +401,7 @@ class _AvatarPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF74C69D),
+      color: const Color(0xFF66BB6A),
       child: Image.asset(
         'assets/images/default_profile.png',
         fit: BoxFit.cover,
@@ -410,17 +425,17 @@ class _SustainabilityCard extends StatelessWidget {
     final progress = (data['scoreProgress'] as num?)?.toDouble() ?? 0.85;
 
     return Container(
-      height: 110,
+      height: 135,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2D6A4F), Color(0xFF40916C), Color(0xFF52B788)],
+          colors: [Color(0xFF2E7D32), Color(0xFF43A047), Color(0xFF66BB6A)],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF40916C).withOpacity(0.4),
+            color: const Color(0xFF43A047).withOpacity(0.4),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -471,13 +486,13 @@ class _SustainabilityCard extends StatelessWidget {
                             '${score.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
                             style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontSize: 30,
+                              fontSize: 28,
                               fontWeight: FontWeight.w800,
                               height: 1.1,
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(Icons.trending_up, color: Color(0xFF95D5B2), size: 20),
+                          const Icon(Icons.trending_up, color: Color(0xFFA5D6A7), size: 20),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -560,7 +575,7 @@ class _ImpactSection extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1B4332),
+            color: const Color(0xFF1B5E20),
           ),
         ),
         const SizedBox(height: 12),
@@ -571,7 +586,7 @@ class _ImpactSection extends StatelessWidget {
                 iconAsset: 'assets/images/co2_icon.png',
                 iconFallback: Icons.cloud_outlined,
                 iconBg: const Color(0xFFE8F5E9),
-                iconColor: const Color(0xFF2D6A4F),
+                iconColor: const Color(0xFF2E7D32),
                 label: 'Carbon Footprint',
                 value: '${carbon}kg',
                 change: '18% vs last month',
@@ -584,7 +599,7 @@ class _ImpactSection extends StatelessWidget {
                 iconAsset: 'assets/images/recycle_icon.png',
                 iconFallback: Icons.recycling,
                 iconBg: const Color(0xFFE8F5E9),
-                iconColor: const Color(0xFF2D6A4F),
+                iconColor: const Color(0xFF2E7D32),
                 label: 'Waste Reduced',
                 value: '${waste}kg',
                 change: '15% vs last month',
@@ -677,7 +692,7 @@ class _ImpactCard extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1B4332),
+              color: const Color(0xFF1B5E20),
             ),
           ),
           const SizedBox(height: 2),
@@ -685,7 +700,7 @@ class _ImpactCard extends StatelessWidget {
             children: [
               Icon(
                 isPositive ? Icons.arrow_downward : Icons.arrow_upward,
-                color: isPositive ? const Color(0xFF2D6A4F) : Colors.red,
+                color: isPositive ? const Color(0xFF2E7D32) : Colors.red,
                 size: 10,
               ),
               Expanded(
@@ -693,7 +708,7 @@ class _ImpactCard extends StatelessWidget {
                   change,
                   style: GoogleFonts.poppins(
                     fontSize: 9,
-                    color: isPositive ? const Color(0xFF2D6A4F) : Colors.red,
+                    color: isPositive ? const Color(0xFF2E7D32) : Colors.red,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -743,7 +758,7 @@ class _WasteReductionCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1B4332),
+                  color: const Color(0xFF1B5E20),
                 ),
               ),
               GestureDetector(
@@ -754,11 +769,11 @@ class _WasteReductionCard extends StatelessWidget {
                       'View Details',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: const Color(0xFF40916C),
+                        color: const Color(0xFF43A047),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Color(0xFF40916C), size: 16),
+                    const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
                   ],
                 ),
               ),
@@ -782,7 +797,7 @@ class _WasteReductionCard extends StatelessWidget {
                         value: progress,
                         strokeWidth: 6,
                         backgroundColor: const Color(0xFFE8F5E9),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF40916C)),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
                         strokeCap: StrokeCap.round,
                       ),
                     ),
@@ -791,7 +806,7 @@ class _WasteReductionCard extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF2D6A4F),
+                        color: const Color(0xFF2E7D32),
                       ),
                     ),
                   ],
@@ -809,7 +824,7 @@ class _WasteReductionCard extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1B4332),
+                        color: const Color(0xFF1B5E20),
                       ),
                     ),
                     Text(
@@ -870,7 +885,7 @@ class _MilestoneTrack extends StatelessWidget {
                   height: 6,
                   width: constraints.maxWidth * progress,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF40916C),
+                    color: const Color(0xFF43A047),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -884,10 +899,10 @@ class _MilestoneTrack extends StatelessWidget {
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: reached ? const Color(0xFF40916C) : Colors.white,
+                        color: reached ? const Color(0xFF43A047) : Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: reached ? const Color(0xFF40916C) : const Color(0xFFB7E4C7),
+                          color: reached ? const Color(0xFF43A047) : const Color(0xFFA5D6A7),
                           width: 2,
                         ),
                       ),
@@ -908,7 +923,7 @@ class _MilestoneTrack extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 9,
                 fontWeight: reached ? FontWeight.w700 : FontWeight.w400,
-                color: reached ? const Color(0xFF2D6A4F) : const Color(0xFFAAAAAA),
+                color: reached ? const Color(0xFF2E7D32) : const Color(0xFFAAAAAA),
               ),
             );
           }).toList(),
@@ -960,7 +975,7 @@ class _ChallengesSection extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1B4332),
+                      color: const Color(0xFF1B5E20),
                     ),
                   ),
                   GestureDetector(
@@ -971,11 +986,11 @@ class _ChallengesSection extends StatelessWidget {
                           'View All',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: const Color(0xFF40916C),
+                            color: const Color(0xFF43A047),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Color(0xFF40916C), size: 16),
+                        const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
                       ],
                     ),
                   ),
@@ -1062,7 +1077,7 @@ class _ChallengeItem extends StatelessWidget {
               color: const Color(0xFFE8F5E9),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF40916C), size: 22),
+            child: Icon(icon, color: const Color(0xFF43A047), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1074,7 +1089,7 @@ class _ChallengeItem extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1B4332),
+                    color: const Color(0xFF1B5E20),
                   ),
                 ),
                 Text(
@@ -1091,7 +1106,7 @@ class _ChallengeItem extends StatelessWidget {
                   'Completed',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: const Color(0xFF40916C),
+                    color: const Color(0xFF43A047),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1100,7 +1115,7 @@ class _ChallengeItem extends StatelessWidget {
                   width: 22,
                   height: 22,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF40916C),
+                    color: Color(0xFF43A047),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check, color: Colors.white, size: 14),
@@ -1118,7 +1133,7 @@ class _ChallengeItem extends StatelessWidget {
                     value: progress,
                     strokeWidth: 3,
                     backgroundColor: const Color(0xFFE8F5E9),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF40916C)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
                     strokeCap: StrokeCap.round,
                   ),
                   Text(
@@ -1126,7 +1141,7 @@ class _ChallengeItem extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 7,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2D6A4F),
+                      color: const Color(0xFF2E7D32),
                     ),
                   ),
                 ],
@@ -1181,7 +1196,7 @@ class _AchievementsSection extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1B4332),
+                      color: const Color(0xFF1B5E20),
                     ),
                   ),
                   GestureDetector(
@@ -1192,11 +1207,11 @@ class _AchievementsSection extends StatelessWidget {
                           'View All',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: const Color(0xFF40916C),
+                            color: const Color(0xFF43A047),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Color(0xFF40916C), size: 16),
+                        const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
                       ],
                     ),
                   ),
@@ -1205,7 +1220,7 @@ class _AchievementsSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 100,
+              height: 125,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -1257,12 +1272,12 @@ class _AchievementBadge extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFFB7E4C7),
+                color: const Color(0xFFA5D6A7),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF40916C).withOpacity(0.12),
+                  color: const Color(0xFF43A047).withOpacity(0.12),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1274,12 +1289,12 @@ class _AchievementBadge extends StatelessWidget {
                   ? CachedNetworkImage(
                       imageUrl: achievement.image,
                       errorWidget: (_, __, ___) =>
-                          const Icon(Icons.eco, color: Color(0xFF40916C), size: 28),
+                          const Icon(Icons.eco, color: Color(0xFF43A047), size: 28),
                     )
                   : Image.asset(
                       achievement.image,
                       errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.eco, color: Color(0xFF40916C), size: 28),
+                          const Icon(Icons.eco, color: Color(0xFF43A047), size: 28),
                     ),
             ),
           ),
@@ -1292,7 +1307,7 @@ class _AchievementBadge extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1B4332),
+                color: const Color(0xFF1B5E20),
               ),
             ),
           ),
@@ -1469,7 +1484,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1B4332),
+                        color: const Color(0xFF1B5E20),
                       ),
                     ),
                     const Spacer(),
@@ -1482,7 +1497,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           color: const Color(0xFFE8F5E9),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.close, size: 18, color: Color(0xFF40916C)),
+                        child: const Icon(Icons.close, size: 18, color: Color(0xFF43A047)),
                       ),
                     ),
                   ],
@@ -1507,7 +1522,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                                 height: 90,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: const Color(0xFF40916C), width: 2.5),
+                                  border: Border.all(color: const Color(0xFF43A047), width: 2.5),
                                 ),
                                 child: ClipOval(
                                   child: _pickedImageBytes != null
@@ -1530,7 +1545,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                                   width: 28,
                                   height: 28,
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFF40916C),
+                                    color: Color(0xFF43A047),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
@@ -1582,7 +1597,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           child: ElevatedButton(
                             onPressed: _loading ? null : _save,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2D6A4F),
+                              backgroundColor: const Color(0xFF2E7D32),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -1647,11 +1662,11 @@ class _EcoTextField extends StatelessWidget {
       validator: validator,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF1B4332)),
+      style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF1B5E20)),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.poppins(color: const Color(0xFF888888), fontSize: 13),
-        prefixIcon: Icon(icon, color: const Color(0xFF40916C), size: 20),
+        prefixIcon: Icon(icon, color: const Color(0xFF43A047), size: 20),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1665,7 +1680,7 @@ class _EcoTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF40916C), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF43A047), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_app/Screens/ProductScreen.dart';
 
-
-
-
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onMenuTap;
+
+  const HomeScreen({
+    super.key,
+    this.onMenuTap,
+  });
 
   static const String bgImage = 'assets/images/home_bg.jpg';
 
@@ -79,7 +81,9 @@ class HomeScreen extends StatelessWidget {
 
           final userName = data['fullName'] ?? data['name'] ?? 'User';
           final photoUrl =
-              data['profileImage'] ?? data['profileImageUrl'] ?? data['photoURL'];
+              data['profileImage'] ??
+              data['profileImageUrl'] ??
+              data['photoURL'];
 
           final carbonFootprint = _toDouble(data['carbonFootprint'], 2.45);
           final carbonProgress = _toDouble(data['carbonProgress'], 0.72);
@@ -140,6 +144,28 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
+                      Builder(
+                        builder: (context) {
+                          return InkWell(
+                            onTap: onMenuTap,
+                            borderRadius: BorderRadius.circular(30),
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.90),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.menu_rounded,
+                                color: Color(0xFF1B5E20),
+                                size: 24,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       _ProfileAvatar(photoUrl: photoUrl),
                       const SizedBox(width: 12),
                       Expanded(
@@ -334,11 +360,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExploreCard(
-    BuildContext context,
-    _ExploreItem item,
-    int index,
-  ) {
+  Widget _buildExploreCard(BuildContext context, _ExploreItem item, int index) {
     return InkWell(
       borderRadius: BorderRadius.circular(17),
       onTap: () {
@@ -376,7 +398,10 @@ class HomeScreen extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.68)],
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.68),
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -467,7 +492,9 @@ class HomeScreen extends StatelessWidget {
             color: Color(0xFFE8F5E9),
             shape: BoxShape.circle,
           ),
-          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 14))),
+          child: Center(
+            child: Text(emoji, style: const TextStyle(fontSize: 14)),
+          ),
         ),
         const SizedBox(width: 8),
         Text(
@@ -541,9 +568,15 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+          Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -551,10 +584,21 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(value,
-                        style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w900, color: const Color(0xFF1B5E20))),
-                    Text(unit,
-                        style: GoogleFonts.poppins(fontSize: 9.5, color: Colors.grey[500])),
+                    Text(
+                      value,
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF1B5E20),
+                      ),
+                    ),
+                    Text(
+                      unit,
+                      style: GoogleFonts.poppins(
+                        fontSize: 9.5,
+                        color: Colors.grey[500],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -573,8 +617,14 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 9),
-          Text(change,
-              style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w600, color: const Color(0xFF2E7D32))),
+          Text(
+            change,
+            style: GoogleFonts.poppins(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF2E7D32),
+            ),
+          ),
         ],
       ),
     );
@@ -619,7 +669,9 @@ class HomeScreen extends StatelessWidget {
               value: progress.clamp(0.0, 1.0),
               minHeight: 8,
               backgroundColor: const Color(0xFFE8F5E9),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF43A047),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -804,7 +856,10 @@ class CircularProgressPainter extends CustomPainter {
 
     textPainter.paint(
       canvas,
-      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
+      Offset(
+        center.dx - textPainter.width / 2,
+        center.dy - textPainter.height / 2,
+      ),
     );
   }
 

@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:my_app/Admin/ManageCommunityPostsScreen.dart';
+
 import 'package:my_app/Screens/CarbonTrackerScreen.dart';
 import 'package:my_app/Screens/CommunityScreen.dart';
 import 'package:my_app/Screens/HomeScreen.dart';
+import 'package:my_app/Screens/LoginScreen.dart';
 import 'package:my_app/Screens/ProfileScreen.dart';
 import 'package:my_app/Screens/WasteReductionTrackerScreen.dart';
 
@@ -70,7 +72,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       CarbonTrackerScreen(onBackTap: () => _onTabTapped(0)),
       WasteReductionTrackerScreen(onBackTap: () => _onTabTapped(0)),
-      CommunityScreen(onBackTap: () => _onTabTapped(0)),
+      CommunityForumScreen(onBackTap: () => _onTabTapped(0)),
       ProfileScreen(onBackTap: () => _onTabTapped(0)),
     ];
   }
@@ -150,7 +152,8 @@ class AppDrawer extends StatelessWidget {
     return Drawer(
       backgroundColor: const Color(0xFFF3FBF1),
       child: SafeArea(
-        child: Column(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
             Container(
               width: double.infinity,
@@ -196,6 +199,7 @@ class AppDrawer extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 10),
 
             _drawerItem(
@@ -257,7 +261,28 @@ class AppDrawer extends StatelessWidget {
               isRoute: true,
             ),
 
-            const Spacer(),
+            const Divider(height: 25),
+
+            _drawerItem(
+              icon: Icons.logout_rounded,
+              title: 'Logout',
+              iconColor: Colors.red,
+              textColor: Colors.red,
+              onTap: () async {
+                Navigator.pop(context);
+
+                await FirebaseAuth.instance.signOut();
+
+                if (!context.mounted) return;
+
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const LoginScreen(),
+                  ),
+                  (route) => false,
+                );
+              },
+            ),
 
             Padding(
               padding: const EdgeInsets.all(16),
@@ -282,21 +307,23 @@ class AppDrawer extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
     bool isRoute = false,
+    Color iconColor = const Color(0xFF2E7D32),
+    Color textColor = const Color(0xFF1B5E20),
   }) {
     return ListTile(
       dense: true,
-      leading: Icon(icon, color: const Color(0xFF2E7D32)),
+      leading: Icon(icon, color: iconColor),
       title: Text(
         title,
         style: GoogleFonts.poppins(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF1B5E20),
+          color: textColor,
         ),
       ),
       trailing: Icon(
         isRoute ? Icons.open_in_new_rounded : Icons.chevron_right_rounded,
-        color: const Color(0xFF66BB6A),
+        color: isRoute ? const Color(0xFF66BB6A) : Colors.transparent,
         size: 17,
       ),
       onTap: onTap,

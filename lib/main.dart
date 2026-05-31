@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/Admin/AdminDashboard.dart';
 import 'package:my_app/Admin/ManageChallengesScreen.dart';
+import 'package:my_app/Admin/ManageCommunityPostsScreen.dart';
 import 'package:my_app/Admin/ManageProductsScreen.dart';
 import 'package:my_app/Admin/ManageRecipesScreen.dart';
 import 'package:my_app/Screens/CommunityScreen.dart';
@@ -45,9 +46,8 @@ class EatcnobityApp extends StatelessWidget {
         '/product-management': (_) => const ManageProductsScreen(),
         '/recipe-management': (_) => const ManageRecipesScreen(),
         '/challenge-management': (_) => const ManageChallengesScreen(),
-        '/content-manager': (_) =>
-            const PlaceholderScreen(title: 'Content Manager'),
-        '/community-posts': (_) => const CommunityScreen(),
+        '/content-manager': (_) => const PlaceholderScreen(title: 'Content Manager'),
+        '/community-posts': (_) => const ManageCommunityPostsScreen(),
         '/reports-analytics': (_) =>
             const PlaceholderScreen(title: 'Reports & Analytics'),
         '/eco-tips-manager': (_) =>

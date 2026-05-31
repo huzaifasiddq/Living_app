@@ -8,8 +8,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:my_app/Admin/ManageChallengesScreen.dart';
+import 'package:my_app/Admin/ManageCommunityPostsScreen.dart';
 import 'package:my_app/Admin/ManageProductsScreen.dart';
 import 'package:my_app/Admin/ManageRecipesScreen.dart';
+import 'package:my_app/Screens/LoginScreen.dart';
 
 // TODO: Jab ye pages bana lo to in imports ko uncomment kar dena.
 // import 'package:my_app/Screens/Admin/ManageProductsScreen.dart';
@@ -54,16 +56,22 @@ class EcoSphereApp extends StatelessWidget {
       ),
       home: const AdminDashboardScreen(),
       routes: {
+        '/login': (_) => const LoginScreen(),
         AdminRoutes.users: (_) => const ManageUsersScreen(),
         AdminRoutes.products: (_) => const ManageProductsScreen(),
         AdminRoutes.recipes: (_) => const ManageRecipesScreen(),
         AdminRoutes.challenges: (_) => const ManageChallengesScreen(),
-        AdminRoutes.content: (_) => const PlaceholderScreen(title: 'Content Manager'),
-        AdminRoutes.community: (_) => const PlaceholderScreen(title: 'Community Posts'),
-        AdminRoutes.reports: (_) => const PlaceholderScreen(title: 'Reports & Analytics'),
-        AdminRoutes.ecoTips: (_) => const PlaceholderScreen(title: 'Eco Tips Manager'),
-        AdminRoutes.feedback: (_) => const PlaceholderScreen(title: 'Feedback & Queries'),
-        AdminRoutes.profile: (_) => const PlaceholderScreen(title: 'Admin Profile'),
+        AdminRoutes.content: (_) =>
+            const PlaceholderScreen(title: 'Content Manager'),
+        AdminRoutes.community: (_) => const ManageCommunityPostsScreen(),
+        AdminRoutes.reports: (_) =>
+            const PlaceholderScreen(title: 'Reports & Analytics'),
+        AdminRoutes.ecoTips: (_) =>
+            const PlaceholderScreen(title: 'Eco Tips Manager'),
+        AdminRoutes.feedback: (_) =>
+            const PlaceholderScreen(title: 'Feedback & Queries'),
+        AdminRoutes.profile: (_) =>
+            const PlaceholderScreen(title: 'Admin Profile'),
       },
     );
   }
@@ -258,48 +266,110 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     return Drawer(
       backgroundColor: const Color(0xFF0F2212),
       child: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            _profileAvatar(radius: 40),
-            const SizedBox(height: 12),
-            Text('Admin',
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
+              _profileAvatar(radius: 40),
+              const SizedBox(height: 12),
+              Text(
+                'Admin',
                 style: GoogleFonts.poppins(
-                    color: EcoColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600)),
-            Text('Super Admin',
+                  color: EcoColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                'Super Admin',
                 style: GoogleFonts.poppins(
-                    color: EcoColors.textSecondary, fontSize: 12)),
-            const SizedBox(height: 24),
-            const Divider(color: EcoColors.cardBorder),
-            _drawerItem(Icons.dashboard_rounded, 'Dashboard', () => Navigator.pop(context)),
-            _drawerItem(Icons.people_rounded, 'User Management',
-                () => _goTo(AdminRoutes.users)),
-            _drawerItem(Icons.inventory_2_rounded, 'Product Management',
-                () => _goTo(AdminRoutes.products)),
-            _drawerItem(Icons.restaurant_menu_rounded, 'Recipe Management',
-                () => _goTo(AdminRoutes.recipes)),
-            _drawerItem(Icons.emoji_events_rounded, 'Challenge Management',
-                () => _goTo(AdminRoutes.challenges)),
-            _drawerItem(Icons.article_rounded, 'Content Manager',
-                () => _goTo(AdminRoutes.content)),
-            _drawerItem(Icons.forum_rounded, 'Community Posts',
-                () => _goTo(AdminRoutes.community)),
-            _drawerItem(Icons.bar_chart_rounded, 'Reports & Analytics',
-                () => _goTo(AdminRoutes.reports)),
-            _drawerItem(Icons.eco_rounded, 'Eco Tips Manager',
-                () => _goTo(AdminRoutes.ecoTips)),
-            _drawerItem(Icons.feedback_rounded, 'Feedback & Queries',
-                () => _goTo(AdminRoutes.feedback)),
-            _drawerItem(Icons.person_rounded, 'Admin Profile',
-                () => _goTo(AdminRoutes.profile)),
-            const Spacer(),
-            _drawerItem(Icons.logout_rounded, 'Sign Out', () async {
-              await FirebaseAuth.instance.signOut();
-            }),
-            const SizedBox(height: 12),
-          ],
+                  color: EcoColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Divider(color: EcoColors.cardBorder),
+
+              _drawerItem(Icons.dashboard_rounded, 'Dashboard', () {
+                Navigator.pop(context);
+              }),
+              _drawerItem(
+                Icons.people_rounded,
+                'User Management',
+                () => _goTo(AdminRoutes.users),
+              ),
+              _drawerItem(
+                Icons.inventory_2_rounded,
+                'Product Management',
+                () => _goTo(AdminRoutes.products),
+              ),
+              _drawerItem(
+                Icons.restaurant_menu_rounded,
+                'Recipe Management',
+                () => _goTo(AdminRoutes.recipes),
+              ),
+              _drawerItem(
+                Icons.emoji_events_rounded,
+                'Challenge Management',
+                () => _goTo(AdminRoutes.challenges),
+              ),
+              _drawerItem(
+                Icons.article_rounded,
+                'Content Manager',
+                () => _goTo(AdminRoutes.content),
+              ),
+              _drawerItem(
+                Icons.forum_rounded,
+                'Community Posts',
+                () => _goTo(AdminRoutes.community),
+              ),
+              _drawerItem(
+                Icons.bar_chart_rounded,
+                'Reports & Analytics',
+                () => _goTo(AdminRoutes.reports),
+              ),
+              _drawerItem(
+                Icons.eco_rounded,
+                'Eco Tips Manager',
+                () => _goTo(AdminRoutes.ecoTips),
+              ),
+              _drawerItem(
+                Icons.feedback_rounded,
+                'Feedback & Queries',
+                () => _goTo(AdminRoutes.feedback),
+              ),
+              _drawerItem(
+                Icons.person_rounded,
+                'Admin Profile',
+                () => _goTo(AdminRoutes.profile),
+              ),
+
+              const SizedBox(height: 20),
+
+              _drawerItem(Icons.logout_rounded, 'Sign Out', () async {
+                try {
+                  Navigator.pop(context);
+
+                  await FirebaseAuth.instance.signOut();
+
+                  if (!mounted) return;
+
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+                }
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -308,9 +378,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   Widget _drawerItem(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: EcoColors.accentLight, size: 20),
-      title: Text(label,
-          style: GoogleFonts.poppins(
-              color: EcoColors.textPrimary, fontSize: 13)),
+      title: Text(
+        label,
+        style: GoogleFonts.poppins(color: EcoColors.textPrimary, fontSize: 13),
+      ),
       onTap: onTap,
     );
   }
@@ -341,7 +412,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Text(
                   'Welcome back,',
                   style: GoogleFonts.poppins(
-                      color: EcoColors.textSecondary, fontSize: 12),
+                    color: EcoColors.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
                 Row(
                   children: [
@@ -355,15 +428,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(Icons.verified_rounded,
-                        color: EcoColors.accent, size: 20),
+                    const Icon(
+                      Icons.verified_rounded,
+                      color: EcoColors.accent,
+                      size: 20,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Here's what's happening with EcoSphere today.",
                   style: GoogleFonts.poppins(
-                      color: const Color(0xFF7B9E7D), fontSize: 10),
+                    color: const Color(0xFF7B9E7D),
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),
@@ -385,7 +463,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     child: Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [EcoColors.primary, EcoColors.accent],
@@ -395,9 +475,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         child: Text(
                           'Super Admin',
                           style: GoogleFonts.poppins(
-                              fontSize: 6,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 6,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -470,11 +551,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Analytics Overview',
-                    style: GoogleFonts.poppins(
-                        color: EcoColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14)),
+                Text(
+                  'Analytics Overview',
+                  style: GoogleFonts.poppins(
+                    color: EcoColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 _monthDropdown(),
               ],
             ),
@@ -516,13 +600,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           value: _selectedMonth,
           dropdownColor: const Color(0xFF132316),
           style: GoogleFonts.poppins(
-              color: EcoColors.textPrimary, fontSize: 11),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              color: EcoColors.accentLight, size: 16),
+            color: EcoColors.textPrimary,
+            fontSize: 11,
+          ),
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: EcoColors.accentLight,
+            size: 16,
+          ),
           isDense: true,
-          items: ['This Month', 'Last Month', 'Last 3 Months', 'This Year']
-              .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-              .toList(),
+          items: [
+            'This Month',
+            'Last Month',
+            'Last 3 Months',
+            'This Year',
+          ].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
           onChanged: (v) => setState(() => _selectedMonth = v!),
         ),
       ),
@@ -558,9 +650,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     ];
 
     return Row(
-      children: cards
-          .map((c) => Expanded(child: _statCard(c)))
-          .toList(),
+      children: cards.map((c) => Expanded(child: _statCard(c))).toList(),
     );
   }
 
@@ -582,30 +672,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               color: EcoColors.iconBg,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(c['icon'] as IconData,
-                color: EcoColors.accent, size: 14),
+            child: Icon(
+              c['icon'] as IconData,
+              color: EcoColors.accent,
+              size: 14,
+            ),
           ),
           const SizedBox(height: 6),
-          Text(c['value'] as String,
-              style: GoogleFonts.poppins(
-                  color: EcoColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14)),
-          Text(c['label'] as String,
-              style: GoogleFonts.poppins(
-                  color: EcoColors.textSecondary,
-                  fontSize: 8),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            c['value'] as String,
+            style: GoogleFonts.poppins(
+              color: EcoColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+          Text(
+            c['label'] as String,
+            style: GoogleFonts.poppins(
+              color: EcoColors.textSecondary,
+              fontSize: 8,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.arrow_upward_rounded,
-                  color: EcoColors.accent, size: 10),
+              const Icon(
+                Icons.arrow_upward_rounded,
+                color: EcoColors.accent,
+                size: 10,
+              ),
               const SizedBox(width: 2),
-              Text('${c['growth']}%',
-                  style: GoogleFonts.poppins(
-                      color: EcoColors.accent, fontSize: 9)),
+              Text(
+                '${c['growth']}%',
+                style: GoogleFonts.poppins(
+                  color: EcoColors.accent,
+                  fontSize: 9,
+                ),
+              ),
             ],
           ),
         ],
@@ -625,10 +731,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         if (snap.hasData && snap.data!.docs.isNotEmpty) {
           spots = snap.data!.docs.asMap().entries.map((e) {
             final d = e.value.data() as Map<String, dynamic>;
-            return FlSpot(
-              e.key.toDouble(),
-              (d['value'] as num).toDouble(),
-            );
+            return FlSpot(e.key.toDouble(), (d['value'] as num).toDouble());
           }).toList();
           final vals = spots.map((s) => s.y).toList();
           maxY = vals.reduce((a, b) => a > b ? a : b) * 1.2;
@@ -644,33 +747,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Active Users',
-                        style: GoogleFonts.poppins(
-                            color: EcoColors.textSecondary, fontSize: 11)),
+                    Text(
+                      'Active Users',
+                      style: GoogleFonts.poppins(
+                        color: EcoColors.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
                     Row(
                       children: [
-                        Text(currentVal,
-                            style: GoogleFonts.poppins(
-                                color: EcoColors.textPrimary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 22)),
+                        Text(
+                          currentVal,
+                          style: GoogleFonts.poppins(
+                            color: EcoColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: EcoColors.accent.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(growth,
-                              style: GoogleFonts.poppins(
-                                  color: EcoColors.accent, fontSize: 10)),
+                          child: Text(
+                            growth,
+                            style: GoogleFonts.poppins(
+                              color: EcoColors.accent,
+                              fontSize: 10,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    Text('vs last month',
-                        style: GoogleFonts.poppins(
-                            color: const Color(0xFF5C7A5E), fontSize: 9)),
+                    Text(
+                      'vs last month',
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF5C7A5E),
+                        fontSize: 9,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -685,18 +805,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   gridData: FlGridData(
                     show: true,
                     horizontalInterval: maxY / 3,
-                    getDrawingHorizontalLine: (_) => FlLine(
-                      color: EcoColors.glassBorder,
-                      strokeWidth: 0.5,
-                    ),
+                    getDrawingHorizontalLine: (_) =>
+                        FlLine(color: EcoColors.glassBorder, strokeWidth: 0.5),
                     drawVerticalLine: false,
                   ),
                   borderData: FlBorderData(show: false),
                   titlesData: FlTitlesData(
-                    rightTitles:
-                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles:
-                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -705,7 +825,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         getTitlesWidget: (v, _) => Text(
                           _shortNum(v),
                           style: GoogleFonts.poppins(
-                              color: const Color(0xFF5C7A5E), fontSize: 8),
+                            color: const Color(0xFF5C7A5E),
+                            fontSize: 8,
+                          ),
                         ),
                       ),
                     ),
@@ -716,7 +838,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         getTitlesWidget: (v, _) => Text(
                           v.toInt().toString(),
                           style: GoogleFonts.poppins(
-                              color: const Color(0xFF5C7A5E), fontSize: 8),
+                            color: const Color(0xFF5C7A5E),
+                            fontSize: 8,
+                          ),
                         ),
                       ),
                     ),
@@ -729,8 +853,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       barWidth: 2,
                       dotData: FlDotData(
                         show: true,
-                        getDotPainter: (spot, _, __, ___) =>
-                            FlDotCirclePainter(
+                        getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
                           radius: 3,
                           color: EcoColors.chartLine,
                           strokeWidth: 1.5,
@@ -761,11 +884,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   List<FlSpot> _fallbackSpots() {
     const vals = [
-      2000, 3000, 4500, 3800, 5000, 6200, 5800, 7000,
-      6500, 8000, 7500, 8600, 9000, 10000, 11500, 12000,
-      11000, 12500, 13000, 12800, 13500, 14000, 13200, 14500, 15000,
+      2000,
+      3000,
+      4500,
+      3800,
+      5000,
+      6200,
+      5800,
+      7000,
+      6500,
+      8000,
+      7500,
+      8600,
+      9000,
+      10000,
+      11500,
+      12000,
+      11000,
+      12500,
+      13000,
+      12800,
+      13500,
+      14000,
+      13200,
+      14500,
+      15000,
     ];
-    return vals.asMap().entries
+    return vals
+        .asMap()
+        .entries
         .map((e) => FlSpot(e.key.toDouble() + 1, e.value.toDouble()))
         .toList();
   }
@@ -781,20 +928,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Management',
-                    style: GoogleFonts.poppins(
-                        color: EcoColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14)),
+                Text(
+                  'Management',
+                  style: GoogleFonts.poppins(
+                    color: EcoColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, AdminRoutes.reports),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AdminRoutes.reports),
                   child: Row(
                     children: [
-                      Text('View All',
-                          style: GoogleFonts.poppins(
-                              color: EcoColors.accent, fontSize: 11)),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: EcoColors.accent, size: 16),
+                      Text(
+                        'View All',
+                        style: GoogleFonts.poppins(
+                          color: EcoColors.accent,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: EcoColors.accent,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -819,8 +977,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 return GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 1.55,
                     crossAxisSpacing: 10,
@@ -871,8 +1028,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     color: EcoColors.accent.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.arrow_forward_rounded,
-                      color: EcoColors.accent, size: 14),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: EcoColors.accent,
+                    size: 14,
+                  ),
                 ),
               ],
             ),
@@ -880,9 +1040,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Text(
               data['title'] as String? ?? 'Management',
               style: GoogleFonts.poppins(
-                  color: EcoColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11),
+                color: EcoColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -890,7 +1051,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Text(
               data['subtitle'] as String? ?? '',
               style: GoogleFonts.poppins(
-                  color: const Color(0xFF5C7A5E), fontSize: 9),
+                color: const Color(0xFF5C7A5E),
+                fontSize: 9,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -923,16 +1086,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Recent Activity',
-                  style: GoogleFonts.poppins(
-                      color: EcoColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12)),
+              Text(
+                'Recent Activity',
+                style: GoogleFonts.poppins(
+                  color: EcoColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, AdminRoutes.reports),
-                child: Text('View All',
-                    style: GoogleFonts.poppins(
-                        color: EcoColors.accent, fontSize: 10)),
+                child: Text(
+                  'View All',
+                  style: GoogleFonts.poppins(
+                    color: EcoColors.accent,
+                    fontSize: 10,
+                  ),
+                ),
               ),
             ],
           ),
@@ -952,9 +1122,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     .toList();
               }
 
-              return Column(
-                children: items.map(_activityItem).toList(),
-              );
+              return Column(children: items.map(_activityItem).toList());
             },
           ),
         ],
@@ -982,25 +1150,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data['title'] as String? ?? '',
-                    style: GoogleFonts.poppins(
-                        color: EcoColors.textPrimary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                Text(data['subtitle'] as String? ?? '',
-                    style: GoogleFonts.poppins(
-                        color: const Color(0xFF5C7A5E), fontSize: 9),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  data['title'] as String? ?? '',
+                  style: GoogleFonts.poppins(
+                    color: EcoColors.textPrimary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  data['subtitle'] as String? ?? '',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF5C7A5E),
+                    fontSize: 9,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
           Text(
             _formatTime(data['time']),
-            style:
-                GoogleFonts.poppins(color: const Color(0xFF5C7A5E), fontSize: 8),
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF5C7A5E),
+              fontSize: 8,
+            ),
           ),
         ],
       ),
@@ -1012,11 +1189,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Feedback Overview',
-              style: GoogleFonts.poppins(
-                  color: EcoColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12)),
+          Text(
+            'Feedback Overview',
+            style: GoogleFonts.poppins(
+              color: EcoColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 12),
           StreamBuilder<DocumentSnapshot>(
             stream: FirestoreService.feedbackStream(),
@@ -1057,14 +1237,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('View All Feedback',
-                      style: GoogleFonts.poppins(
-                          fontSize: 11, fontWeight: FontWeight.w500)),
+                  Text(
+                    'View All Feedback',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(width: 6),
                   const Icon(Icons.chevron_right_rounded, size: 16),
                 ],
@@ -1090,46 +1275,65 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   centerSpaceRadius: 38,
                   sections: [
                     PieChartSectionData(
-                        value: pos * 100,
-                        color: EcoColors.positive,
-                        radius: 22,
-                        showTitle: false),
+                      value: pos * 100,
+                      color: EcoColors.positive,
+                      radius: 22,
+                      showTitle: false,
+                    ),
                     PieChartSectionData(
-                        value: neu * 100,
-                        color: EcoColors.neutral,
-                        radius: 22,
-                        showTitle: false),
+                      value: neu * 100,
+                      color: EcoColors.neutral,
+                      radius: 22,
+                      showTitle: false,
+                    ),
                     PieChartSectionData(
-                        value: neg * 100,
-                        color: EcoColors.negative,
-                        radius: 22,
-                        showTitle: false),
+                      value: neg * 100,
+                      color: EcoColors.negative,
+                      radius: 22,
+                      showTitle: false,
+                    ),
                   ],
                 ),
               ),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('$total',
-                      style: GoogleFonts.poppins(
-                          color: EcoColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20)),
-                  Text('Total',
-                      style: GoogleFonts.poppins(
-                          color: EcoColors.textSecondary, fontSize: 9)),
+                  Text(
+                    '$total',
+                    style: GoogleFonts.poppins(
+                      color: EcoColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    'Total',
+                    style: GoogleFonts.poppins(
+                      color: EcoColors.textSecondary,
+                      fontSize: 9,
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 8),
-        _legendItem(EcoColors.positive, 'Positive',
-            '${(pos * 100).toInt()} (${(pos * 100).toInt()}%)'),
-        _legendItem(EcoColors.neutral, 'Neutral',
-            '${(neu * 100).toInt()} (${(neu * 100).toInt()}%)'),
-        _legendItem(EcoColors.negative, 'Negative',
-            '${(neg * 100).toInt()} (${(neg * 100).toInt()}%)'),
+        _legendItem(
+          EcoColors.positive,
+          'Positive',
+          '${(pos * 100).toInt()} (${(pos * 100).toInt()}%)',
+        ),
+        _legendItem(
+          EcoColors.neutral,
+          'Neutral',
+          '${(neu * 100).toInt()} (${(neu * 100).toInt()}%)',
+        ),
+        _legendItem(
+          EcoColors.negative,
+          'Negative',
+          '${(neg * 100).toInt()} (${(neg * 100).toInt()}%)',
+        ),
       ],
     );
   }
@@ -1140,20 +1344,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       child: Row(
         children: [
           Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                  color: color, shape: BoxShape.circle)),
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 6),
-          Text(label,
-              style: GoogleFonts.poppins(
-                  color: EcoColors.textSecondary, fontSize: 9)),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: EcoColors.textSecondary,
+              fontSize: 9,
+            ),
+          ),
           const Spacer(),
-          Text(value,
-              style: GoogleFonts.poppins(
-                  color: EcoColors.textPrimary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: EcoColors.textPrimary,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -1194,8 +1405,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     return n.toString();
   }
 
-  String _fmtDouble(dynamic v) =>
-      (v as num?)?.toStringAsFixed(1) ?? '0.0';
+  String _fmtDouble(dynamic v) => (v as num?)?.toStringAsFixed(1) ?? '0.0';
 
   String _shortNum(double v) {
     if (v >= 1000) return '${(v / 1000).toInt()}K';
@@ -1239,75 +1449,74 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   List<Map<String, dynamic>> _fallbackMgmtCards() => [
-        {
-          'title': 'User Management',
-          'subtitle': 'Manage users and permissions',
-          'icon': 'people',
-          'routeName': AdminRoutes.users,
-        },
-        {
-          'title': 'Product Management',
-          'subtitle': 'Add, edit and manage products',
-          'icon': 'product',
-          'routeName': AdminRoutes.products,
-        },
-        {
-          'title': 'Recipe Management',
-          'subtitle': 'Manage healthy recipes',
-          'icon': 'recipe',
-          'routeName': AdminRoutes.recipes,
-        },
-        {
-          'title': 'Challenge Management',
-          'subtitle': 'Create and manage eco challenges',
-          'icon': 'challenge',
-          'routeName': AdminRoutes.challenges,
-        },
-        {
-          'title': 'Content Manager',
-          'subtitle': 'Manage educational content',
-          'icon': 'content',
-          'routeName': AdminRoutes.content,
-        },
-        {
-          'title': 'Reports & Analytics',
-          'subtitle': 'View reports and analytics',
-          'icon': 'analytics',
-          'routeName': AdminRoutes.reports,
-        },
-        {
-          'title': 'Eco Tips Manager',
-          'subtitle': 'Add and manage eco tips',
-          'icon': 'eco',
-          'routeName': AdminRoutes.ecoTips,
-        },
-        {
-          'title': 'Feedback & Queries',
-          'subtitle': 'View feedback and user queries',
-          'icon': 'feedback',
-          'routeName': AdminRoutes.feedback,
-        },
-      ];
+    {
+      'title': 'User Management',
+      'subtitle': 'Manage users and permissions',
+      'icon': 'people',
+      'routeName': AdminRoutes.users,
+    },
+    {
+      'title': 'Product Management',
+      'subtitle': 'Add, edit and manage products',
+      'icon': 'product',
+      'routeName': AdminRoutes.products,
+    },
+    {
+      'title': 'Recipe Management',
+      'subtitle': 'Manage healthy recipes',
+      'icon': 'recipe',
+      'routeName': AdminRoutes.recipes,
+    },
+    {
+      'title': 'Challenge Management',
+      'subtitle': 'Create and manage eco challenges',
+      'icon': 'challenge',
+      'routeName': AdminRoutes.challenges,
+    },
+    {
+      'title': 'Content Manager',
+      'subtitle': 'Manage educational content',
+      'icon': 'content',
+      'routeName': AdminRoutes.content,
+    },
+    {
+      'title': 'Reports & Analytics',
+      'subtitle': 'View reports and analytics',
+      'icon': 'analytics',
+      'routeName': AdminRoutes.reports,
+    },
+    {
+      'title': 'Eco Tips Manager',
+      'subtitle': 'Add and manage eco tips',
+      'icon': 'eco',
+      'routeName': AdminRoutes.ecoTips,
+    },
+    {
+      'title': 'Feedback & Queries',
+      'subtitle': 'View feedback and user queries',
+      'icon': 'feedback',
+      'routeName': AdminRoutes.feedback,
+    },
+  ];
 
   List<Map<String, dynamic>> _fallbackActivity() => [
-        {
-          'title': 'New user registered',
-          'subtitle': 'John Doe joined EcoSphere',
-          'time': '2m ago',
-        },
-        {
-          'title': 'New product added',
-          'subtitle': 'Bamboo Toothbrush added',
-          'time': '15m ago',
-        },
-        {
-          'title': 'New challenge created',
-          'subtitle': 'Plastic Free July Challenge',
-          'time': '1h ago',
-        },
-      ];
+    {
+      'title': 'New user registered',
+      'subtitle': 'John Doe joined EcoSphere',
+      'time': '2m ago',
+    },
+    {
+      'title': 'New product added',
+      'subtitle': 'Bamboo Toothbrush added',
+      'time': '15m ago',
+    },
+    {
+      'title': 'New challenge created',
+      'subtitle': 'Plastic Free July Challenge',
+      'time': '1h ago',
+    },
+  ];
 }
-
 
 // ─────────────────────────────────────────────
 // MANAGE USERS SCREEN
@@ -1337,10 +1546,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
 
     return docs.where((doc) {
       final data = doc.data();
-      final name = (data['fullName'] ?? data['name'] ?? '').toString().toLowerCase();
+      final name = (data['fullName'] ?? data['name'] ?? '')
+          .toString()
+          .toLowerCase();
       final email = (data['email'] ?? '').toString().toLowerCase();
       final role = (data['role'] ?? '').toString().toLowerCase();
-      return name.contains(query) || email.contains(query) || role.contains(query);
+      return name.contains(query) ||
+          email.contains(query) ||
+          role.contains(query);
     }).toList();
   }
 
@@ -1359,15 +1572,23 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: EcoColors.card,
-        title: Text('Delete User?', style: GoogleFonts.poppins(color: EcoColors.textPrimary)),
+        title: Text(
+          'Delete User?',
+          style: GoogleFonts.poppins(color: EcoColors.textPrimary),
+        ),
         content: Text(
           'This will delete user data from Firestore only.',
           style: GoogleFonts.poppins(color: EcoColors.textSecondary),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: EcoColors.negative),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: EcoColors.negative,
+            ),
             onPressed: () {
               Navigator.pop(context);
               _deleteUser(docId);
@@ -1399,13 +1620,18 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           _searchBox(),
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance.collection('users').orderBy('email').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .orderBy('email')
+                  .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return const _LoadingWidget();
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  return const _LoadingWidget();
                 if (snapshot.hasError) return const _ErrorWidget();
 
                 final users = _filterUsers(snapshot.data?.docs ?? []);
-                if (users.isEmpty) return const _EmptyWidget(message: 'No users found');
+                if (users.isEmpty)
+                  return const _EmptyWidget(message: 'No users found');
 
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
@@ -1418,11 +1644,13 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
 
                     return _userCard(
                       docId: doc.id,
-                      name: (data['fullName'] ?? data['name'] ?? 'Unknown User').toString(),
+                      name: (data['fullName'] ?? data['name'] ?? 'Unknown User')
+                          .toString(),
                       email: (data['email'] ?? 'No email').toString(),
                       role: (data['role'] ?? 'user').toString(),
                       blocked: data['blocked'] == true,
-                      imageUrl: (data['profileImage'] ?? data['photoUrl'] ?? '').toString(),
+                      imageUrl: (data['profileImage'] ?? data['photoUrl'] ?? '')
+                          .toString(),
                     );
                   },
                 );
@@ -1454,9 +1682,15 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
               onChanged: (value) => setState(() => searchText = value),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                icon: const Icon(Icons.search_rounded, color: EcoColors.accentLight),
+                icon: const Icon(
+                  Icons.search_rounded,
+                  color: EcoColors.accentLight,
+                ),
                 hintText: 'Search users by name, email or role',
-                hintStyle: GoogleFonts.poppins(color: const Color(0xFF5C7A5E), fontSize: 12),
+                hintStyle: GoogleFonts.poppins(
+                  color: const Color(0xFF5C7A5E),
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
@@ -1487,7 +1721,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           CircleAvatar(
             radius: 26,
             backgroundColor: EcoColors.iconBg,
-            backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+            backgroundImage: imageUrl.isNotEmpty
+                ? NetworkImage(imageUrl)
+                : null,
             child: imageUrl.isEmpty
                 ? const Icon(Icons.person_rounded, color: EcoColors.accentLight)
                 : null,
@@ -1511,14 +1747,23 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                   email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(color: const Color(0xFF5C7A5E), fontSize: 10),
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF5C7A5E),
+                    fontSize: 10,
+                  ),
                 ),
                 const SizedBox(height: 7),
                 Row(
                   children: [
-                    _badge(isAdmin ? 'Admin' : 'User', isAdmin ? Colors.deepPurpleAccent : EcoColors.accent),
+                    _badge(
+                      isAdmin ? 'Admin' : 'User',
+                      isAdmin ? Colors.deepPurpleAccent : EcoColors.accent,
+                    ),
                     const SizedBox(width: 6),
-                    _badge(blocked ? 'Blocked' : 'Active', blocked ? EcoColors.negative : EcoColors.positive),
+                    _badge(
+                      blocked ? 'Blocked' : 'Active',
+                      blocked ? EcoColors.negative : EcoColors.positive,
+                    ),
                   ],
                 ),
               ],
@@ -1534,13 +1779,18 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'block',
-                child: Text(blocked ? 'Unblock' : 'Block',
-                    style: GoogleFonts.poppins(color: EcoColors.textPrimary)),
+                child: Text(
+                  blocked ? 'Unblock' : 'Block',
+                  style: GoogleFonts.poppins(color: EcoColors.textPrimary),
+                ),
               ),
               if (!isAdmin)
                 PopupMenuItem(
                   value: 'delete',
-                  child: Text('Delete', style: GoogleFonts.poppins(color: EcoColors.negative)),
+                  child: Text(
+                    'Delete',
+                    style: GoogleFonts.poppins(color: EcoColors.negative),
+                  ),
                 ),
             ],
           ),
@@ -1581,16 +1831,22 @@ class PlaceholderScreen extends StatelessWidget {
       backgroundColor: EcoColors.bg,
       appBar: AppBar(
         backgroundColor: EcoColors.card,
-        title: Text(title,
-            style: GoogleFonts.poppins(
-                color: EcoColors.textPrimary, fontSize: 16)),
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(
+            color: EcoColors.textPrimary,
+            fontSize: 16,
+          ),
+        ),
         iconTheme: const IconThemeData(color: EcoColors.accentLight),
       ),
       body: Center(
         child: Text(
           title,
           style: GoogleFonts.poppins(
-              color: EcoColors.textSecondary, fontSize: 18),
+            color: EcoColors.textSecondary,
+            fontSize: 18,
+          ),
         ),
       ),
     );
@@ -1631,12 +1887,16 @@ class _ErrorWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline_rounded,
-              color: EcoColors.negative, size: 16),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: EcoColors.negative,
+            size: 16,
+          ),
           const SizedBox(width: 6),
-          Text('Failed to load data',
-              style: GoogleFonts.poppins(
-                  color: EcoColors.negative, fontSize: 11)),
+          Text(
+            'Failed to load data',
+            style: GoogleFonts.poppins(color: EcoColors.negative, fontSize: 11),
+          ),
         ],
       ),
     );
@@ -1652,9 +1912,13 @@ class _EmptyWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
-        child: Text(message,
-            style: GoogleFonts.poppins(
-                color: EcoColors.textSecondary, fontSize: 11)),
+        child: Text(
+          message,
+          style: GoogleFonts.poppins(
+            color: EcoColors.textSecondary,
+            fontSize: 11,
+          ),
+        ),
       ),
     );
   }

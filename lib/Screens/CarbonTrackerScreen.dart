@@ -328,7 +328,7 @@ class _CarbonTrackerScreenState extends State<CarbonTrackerScreen>
                             right: 0,
                             bottom: 0,
                             child: Image.asset(
-                              'assets/images/eco_leaf_bg.jpg',
+                              'assets/images/leaf_icon.png',
                               width: 40,
                               errorBuilder: (_, __, ___) => const Icon(
                                 Icons.eco,

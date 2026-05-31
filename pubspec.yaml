@@ -45,6 +45,7 @@ dependencies:
   fl_chart: ^1.2.0
   carousel_slider: ^5.1.2
   curved_animation_controller: ^1.1.0+1
+  timeago: ^3.7.1
 
 dev_dependencies:
   flutter_test:

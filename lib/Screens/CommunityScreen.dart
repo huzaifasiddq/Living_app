@@ -29,34 +29,6 @@ const _kGreenChip = Color(0xFFDCEDC8);
 const _kWhite = Colors.white;
 const _kShadow = Color(0x204CAF50);
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ),
-  );
-  runApp(const _App());
-}
-
-class _App extends StatelessWidget {
-  const _App();
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: _kGreen),
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        useMaterial3: true,
-      ),
-      home: const CommunityForumScreen(),
-    );
-  }
-}
-
 class CommunityForumScreen extends StatefulWidget {
   final VoidCallback? onBackTap;
 
@@ -112,7 +84,10 @@ class _CommunityForumScreenState extends State<CommunityForumScreen>
       .snapshots();
 
   Stream<QuerySnapshot> get _postsStream {
-    Query q = _db.collection('communityPosts').orderBy('createdAt', descending: true);
+    Query q = _db
+        .collection('communityPosts')
+        .orderBy('createdAt', descending: true)
+        .limit(20);
     if (_selectedCategory != 'All') {
       q = q.where('category', isEqualTo: _selectedCategory);
     }
@@ -1070,27 +1045,37 @@ class _ImageCollage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = imageUrls.length;
+
     if (count == 1) {
-      return _imageBox(imageUrls[0], height: 210, width: double.infinity);
+      return _imageBox(
+        imageUrls[0],
+        height: 210,
+        width: double.infinity,
+      );
     }
+
     if (count == 2) {
       return SizedBox(
         height: 210,
         child: Row(
           children: [
-            Expanded(child: _imageBox(imageUrls[0], height: 210)),
+            Expanded(child: _imageBox(imageUrls[0])),
             const SizedBox(width: 2),
-            Expanded(child: _imageBox(imageUrls[1], height: 210)),
+            Expanded(child: _imageBox(imageUrls[1])),
           ],
         ),
       );
     }
+
     if (count == 3) {
       return SizedBox(
         height: 220,
         child: Row(
           children: [
-            Expanded(flex: 2, child: _imageBox(imageUrls[0], height: 220)),
+            Expanded(
+              flex: 2,
+              child: _imageBox(imageUrls[0]),
+            ),
             const SizedBox(width: 2),
             Expanded(
               child: Column(
@@ -1125,7 +1110,12 @@ class _ImageCollage extends StatelessWidget {
               children: [
                 Expanded(child: _imageBox(imageUrls[2])),
                 const SizedBox(width: 2),
-                Expanded(child: _imageBox(imageUrls[3], overlayText: count > 4 ? '+${count - 4}' : null)),
+                Expanded(
+                  child: _imageBox(
+                    imageUrls[3],
+                    overlayText: count > 4 ? '+${count - 4}' : null,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1134,35 +1124,51 @@ class _ImageCollage extends StatelessWidget {
     );
   }
 
-  Widget _imageBox(String url, {double? height, double? width, String? overlayText}) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        SizedBox(
-          height: height,
-          width: width,
-          child: CachedNetworkImage(
+  Widget _imageBox(
+    String url, {
+    double? height,
+    double? width,
+    String? overlayText,
+  }) {
+    return SizedBox(
+      height: height,
+      width: width ?? double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
             imageUrl: url,
             fit: BoxFit.cover,
             placeholder: (_, __) => Container(color: _kGreenSurface),
             errorWidget: (_, __, ___) => Container(
               color: _kGreenSurface,
-              child: const Icon(Icons.image_outlined, color: _kGreenAccent, size: 40),
+              child: const Icon(
+                Icons.image_outlined,
+                color: _kGreenAccent,
+                size: 40,
+              ),
             ),
           ),
-        ),
-        if (overlayText != null)
-          Container(
-            color: Colors.black.withOpacity(0.45),
-            child: Center(
-              child: Text(overlayText, style: GoogleFonts.poppins(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
+
+          if (overlayText != null)
+            Container(
+              color: Colors.black.withOpacity(0.45),
+              child: Center(
+                child: Text(
+                  overlayText,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
-
 class _TrendingCard extends StatelessWidget {
   final Map<String, dynamic> data;
 

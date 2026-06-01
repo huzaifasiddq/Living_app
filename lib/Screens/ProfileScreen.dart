@@ -24,24 +24,20 @@ const String kCloudinaryFolder = 'eco_profile_images';
 class ProfileScreen extends StatelessWidget {
   final VoidCallback? onBackTap;
 
-  const ProfileScreen({
-    super.key,
-    this.onBackTap,
-  });
+  const ProfileScreen({super.key, this.onBackTap});
 
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-        return _EcoProfileView(
-          uid: uid,
-          data: data,
-          onBackTap: onBackTap,
-        );
+        return _EcoProfileView(uid: uid, data: data, onBackTap: onBackTap);
       },
     );
   }
@@ -122,11 +118,7 @@ class _EcoProfileView extends StatelessWidget {
 //  HEADER SECTION
 // ─────────────────────────────────────────────
 class _HeaderSection extends StatelessWidget {
-  const _HeaderSection({
-    required this.uid,
-    required this.data,
-    this.onBackTap,
-  });
+  const _HeaderSection({required this.uid, required this.data, this.onBackTap});
 
   final String uid;
   final Map<String, dynamic> data;
@@ -154,7 +146,11 @@ class _HeaderSection extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFF2E7D32), Color(0xFF66BB6A), Color(0xFFA5D6A7)],
+                      colors: [
+                        Color(0xFF2E7D32),
+                        Color(0xFF66BB6A),
+                        Color(0xFFA5D6A7),
+                      ],
                     ),
                   ),
                 ),
@@ -171,8 +167,16 @@ class _HeaderSection extends StatelessWidget {
           ),
 
           // Decorative leaf circles
-          Positioned(top: -30, right: -30, child: _LeafCircle(size: 120, opacity: 0.15)),
-          Positioned(bottom: -20, left: -20, child: _LeafCircle(size: 90, opacity: 0.12)),
+          Positioned(
+            top: -30,
+            right: -30,
+            child: _LeafCircle(size: 120, opacity: 0.15),
+          ),
+          Positioned(
+            bottom: -20,
+            left: -20,
+            child: _LeafCircle(size: 90, opacity: 0.12),
+          ),
 
           // Back button
           Positioned(
@@ -219,8 +223,10 @@ class _HeaderSection extends StatelessWidget {
                             ? CachedNetworkImage(
                                 imageUrl: profileImage,
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => const _AvatarPlaceholder(),
-                                errorWidget: (_, __, ___) => const _AvatarPlaceholder(),
+                                placeholder: (_, __) =>
+                                    const _AvatarPlaceholder(),
+                                errorWidget: (_, __, ___) =>
+                                    const _AvatarPlaceholder(),
                               )
                             : const _AvatarPlaceholder(),
                       ),
@@ -235,7 +241,11 @@ class _HeaderSection extends StatelessWidget {
                           color: Color(0xFF43A047),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.eco, color: Colors.white, size: 14),
+                        child: const Icon(
+                          Icons.eco,
+                          color: Colors.white,
+                          size: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -269,11 +279,17 @@ class _HeaderSection extends StatelessWidget {
                     GestureDetector(
                       onTap: () => _openEditProfile(context),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.25),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.5),
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -287,7 +303,11 @@ class _HeaderSection extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.edit_outlined, color: Colors.white, size: 12),
+                            const Icon(
+                              Icons.edit_outlined,
+                              color: Colors.white,
+                              size: 12,
+                            ),
                           ],
                         ),
                       ),
@@ -298,7 +318,10 @@ class _HeaderSection extends StatelessWidget {
 
                 // Eco Warrior badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF43A047).withOpacity(0.9),
                     borderRadius: BorderRadius.circular(20),
@@ -360,7 +383,10 @@ class _GlassButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.25),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.4),
+                width: 1,
+              ),
             ),
             child: Icon(icon, color: Colors.white, size: 18),
           ),
@@ -405,7 +431,8 @@ class _AvatarPlaceholder extends StatelessWidget {
       child: Image.asset(
         'assets/images/default_profile.png',
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white, size: 40),
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.person, color: Colors.white, size: 40),
       ),
     );
   }
@@ -475,7 +502,11 @@ class _SustainabilityCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Icon(Icons.info_outline, color: Colors.white.withOpacity(0.7), size: 14),
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 14,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -492,7 +523,11 @@ class _SustainabilityCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(Icons.trending_up, color: Color(0xFFA5D6A7), size: 20),
+                          const Icon(
+                            Icons.trending_up,
+                            color: Color(0xFFA5D6A7),
+                            size: 20,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -522,7 +557,9 @@ class _SustainabilityCard extends StatelessWidget {
                           value: progress,
                           strokeWidth: 5,
                           backgroundColor: Colors.white.withOpacity(0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                           strokeCap: StrokeCap.round,
                         ),
                       ),
@@ -537,8 +574,11 @@ class _SustainabilityCard extends StatelessWidget {
                           'assets/images/leaf_icon.png',
                           width: 28,
                           height: 28,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.eco, color: Colors.white, size: 28),
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.eco,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
                       ),
                     ],
@@ -668,12 +708,16 @@ class _ImpactCard extends StatelessWidget {
           Container(
             width: 34,
             height: 34,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(6),
               child: Image.asset(
                 iconAsset,
-                errorBuilder: (_, __, ___) => Icon(iconFallback, color: iconColor, size: 18),
+                errorBuilder: (_, __, ___) =>
+                    Icon(iconFallback, color: iconColor, size: 18),
               ),
             ),
           ),
@@ -773,7 +817,11 @@ class _WasteReductionCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Color(0xFF43A047),
+                      size: 16,
+                    ),
                   ],
                 ),
               ),
@@ -797,7 +845,9 @@ class _WasteReductionCard extends StatelessWidget {
                         value: progress,
                         strokeWidth: 6,
                         backgroundColor: const Color(0xFFE8F5E9),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF43A047),
+                        ),
                         strokeCap: StrokeCap.round,
                       ),
                     ),
@@ -902,7 +952,9 @@ class _MilestoneTrack extends StatelessWidget {
                         color: reached ? const Color(0xFF43A047) : Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: reached ? const Color(0xFF43A047) : const Color(0xFFA5D6A7),
+                          color: reached
+                              ? const Color(0xFF43A047)
+                              : const Color(0xFFA5D6A7),
                           width: 2,
                         ),
                       ),
@@ -923,7 +975,9 @@ class _MilestoneTrack extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 9,
                 fontWeight: reached ? FontWeight.w700 : FontWeight.w400,
-                color: reached ? const Color(0xFF2E7D32) : const Color(0xFFAAAAAA),
+                color: reached
+                    ? const Color(0xFF2E7D32)
+                    : const Color(0xFFAAAAAA),
               ),
             );
           }).toList(),
@@ -990,7 +1044,11 @@ class _ChallengesSection extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFF43A047),
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1094,7 +1152,10 @@ class _ChallengeItem extends StatelessWidget {
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF888888)),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: const Color(0xFF888888),
+                  ),
                 ),
               ],
             ),
@@ -1133,7 +1194,9 @@ class _ChallengeItem extends StatelessWidget {
                     value: progress,
                     strokeWidth: 3,
                     backgroundColor: const Color(0xFFE8F5E9),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF43A047),
+                    ),
                     strokeCap: StrokeCap.round,
                   ),
                   Text(
@@ -1211,7 +1274,11 @@ class _AchievementsSection extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Color(0xFF43A047), size: 16),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFF43A047),
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1226,7 +1293,8 @@ class _AchievementsSection extends StatelessWidget {
                 physics: const BouncingScrollPhysics(),
                 itemCount: achievements.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, i) => _AchievementBadge(achievement: achievements[i]),
+                itemBuilder: (context, i) =>
+                    _AchievementBadge(achievement: achievements[i]),
               ),
             ),
           ],
@@ -1236,16 +1304,40 @@ class _AchievementsSection extends StatelessWidget {
   }
 
   List<_AchievementData> get _defaultAchievements => [
-        _AchievementData(title: 'Eco Starter', image: 'assets/images/leaf_icon.png', unlocked: true),
-        _AchievementData(title: 'Tree Planter', image: 'assets/images/tree_badge.png', unlocked: true),
-        _AchievementData(title: 'Waste Reducer', image: 'assets/images/recycle_badge.png', unlocked: true),
-        _AchievementData(title: 'Water Saver', image: 'assets/images/water_badge.png', unlocked: true),
-        _AchievementData(title: 'Climate Hero', image: 'assets/images/climate_badge.png', unlocked: false),
-      ];
+    _AchievementData(
+      title: 'Eco Starter',
+      image: 'assets/images/leaf_icon.png',
+      unlocked: true,
+    ),
+    _AchievementData(
+      title: 'Tree Planter',
+      image: 'assets/images/tree_badge.png',
+      unlocked: true,
+    ),
+    _AchievementData(
+      title: 'Waste Reducer',
+      image: 'assets/images/recycle_badge.png',
+      unlocked: true,
+    ),
+    _AchievementData(
+      title: 'Water Saver',
+      image: 'assets/images/water_badge.png',
+      unlocked: true,
+    ),
+    _AchievementData(
+      title: 'Climate Hero',
+      image: 'assets/images/climate_badge.png',
+      unlocked: false,
+    ),
+  ];
 }
 
 class _AchievementData {
-  const _AchievementData({required this.title, required this.image, required this.unlocked});
+  const _AchievementData({
+    required this.title,
+    required this.image,
+    required this.unlocked,
+  });
 
   final String title;
   final String image;
@@ -1271,10 +1363,7 @@ class _AchievementBadge extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFA5D6A7),
-                width: 1.5,
-              ),
+              border: Border.all(color: const Color(0xFFA5D6A7), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF43A047).withOpacity(0.12),
@@ -1288,13 +1377,19 @@ class _AchievementBadge extends StatelessWidget {
               child: isUrl
                   ? CachedNetworkImage(
                       imageUrl: achievement.image,
-                      errorWidget: (_, __, ___) =>
-                          const Icon(Icons.eco, color: Color(0xFF43A047), size: 28),
+                      errorWidget: (_, __, ___) => const Icon(
+                        Icons.eco,
+                        color: Color(0xFF43A047),
+                        size: 28,
+                      ),
                     )
                   : Image.asset(
                       achievement.image,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.eco, color: Color(0xFF43A047), size: 28),
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.eco,
+                        color: Color(0xFF43A047),
+                        size: 28,
+                      ),
                     ),
             ),
           ),
@@ -1346,7 +1441,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.data['fullName'] ?? '');
     _emailCtrl = TextEditingController(text: widget.data['email'] ?? '');
-    _titleCtrl = TextEditingController(text: widget.data['ecoTitle'] ?? 'Eco Warrior');
+    _titleCtrl = TextEditingController(
+      text: widget.data['ecoTitle'] ?? 'Eco Warrior',
+    );
     _bioCtrl = TextEditingController(text: widget.data['bio'] ?? '');
   }
 
@@ -1361,7 +1458,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
 
     if (picked != null) {
       final bytes = await picked.readAsBytes();
@@ -1375,7 +1475,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   Future<String> _uploadImageToCloudinary(XFile image) async {
     if (kCloudinaryCloudName == 'YOUR_CLOUD_NAME' ||
         kCloudinaryUploadPreset == 'YOUR_UNSIGNED_UPLOAD_PRESET') {
-      throw Exception('Cloudinary cloud name aur unsigned upload preset set karo.');
+      throw Exception(
+        'Cloudinary cloud name aur unsigned upload preset set karo.',
+      );
     }
 
     final bytes = await image.readAsBytes();
@@ -1391,7 +1493,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
         http.MultipartFile.fromBytes(
           'file',
           bytes,
-          filename: image.name.isNotEmpty ? image.name : 'profile_${widget.uid}.jpg',
+          filename: image.name.isNotEmpty
+              ? image.name
+              : 'profile_${widget.uid}.jpg',
         ),
       );
 
@@ -1412,6 +1516,75 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     return secureUrl;
   }
 
+  Future<void> _updateCommunityUserData({
+    required String uid,
+    required String fullName,
+    required String ecoTitle,
+    String? imageUrl,
+  }) async {
+    final db = FirebaseFirestore.instance;
+
+    final postUpdates = <String, dynamic>{
+      'userName': fullName,
+      'badge': ecoTitle,
+    };
+
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      postUpdates['userImage'] = imageUrl;
+    }
+
+    final userPosts = await db
+        .collection('communityPosts')
+        .where('userId', isEqualTo: uid)
+        .get();
+
+    for (final post in userPosts.docs) {
+      await post.reference.update(postUpdates);
+    }
+
+    final allPosts = await db.collection('communityPosts').get();
+
+    for (final post in allPosts.docs) {
+      final userComments = await post.reference
+          .collection('comments')
+          .where('userId', isEqualTo: uid)
+          .get();
+
+      for (final comment in userComments.docs) {
+        final commentUpdates = <String, dynamic>{
+          'userName': fullName,
+        };
+
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          commentUpdates['userImage'] = imageUrl;
+        }
+
+        await comment.reference.update(commentUpdates);
+      }
+
+      final allComments = await post.reference.collection('comments').get();
+
+      for (final comment in allComments.docs) {
+        final userReplies = await comment.reference
+            .collection('replies')
+            .where('userId', isEqualTo: uid)
+            .get();
+
+        for (final reply in userReplies.docs) {
+          final replyUpdates = <String, dynamic>{
+            'userName': fullName,
+          };
+
+          if (imageUrl != null && imageUrl.isNotEmpty) {
+            replyUpdates['userImage'] = imageUrl;
+          }
+
+          await reply.reference.update(replyUpdates);
+        }
+      }
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
@@ -1423,20 +1596,39 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
         imageUrl = await _uploadImageToCloudinary(_pickedImage!);
       }
 
+      final fullName = _nameCtrl.text.trim();
+      final ecoTitle = _titleCtrl.text.trim();
+
       final updates = <String, dynamic>{
-        'fullName': _nameCtrl.text.trim(),
+        'fullName': fullName,
         'email': _emailCtrl.text.trim(),
-        'ecoTitle': _titleCtrl.text.trim(),
+        'ecoTitle': ecoTitle,
         'bio': _bioCtrl.text.trim(),
       };
-      if (imageUrl != null) updates['profileImage'] = imageUrl;
+
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        updates['profileImage'] = imageUrl;
+      }
 
       await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.uid)
           .set(updates, SetOptions(merge: true));
 
-      if (mounted) Navigator.of(context).pop();
+      await _updateCommunityUserData(
+        uid: widget.uid,
+        fullName: fullName,
+        ecoTitle: ecoTitle,
+        imageUrl: imageUrl,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+
+      Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1497,7 +1689,11 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           color: const Color(0xFFE8F5E9),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.close, size: 18, color: Color(0xFF43A047)),
+                        child: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Color(0xFF43A047),
+                        ),
                       ),
                     ),
                   ],
@@ -1522,20 +1718,31 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                                 height: 90,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: const Color(0xFF43A047), width: 2.5),
+                                  border: Border.all(
+                                    color: const Color(0xFF43A047),
+                                    width: 2.5,
+                                  ),
                                 ),
                                 child: ClipOval(
                                   child: _pickedImageBytes != null
-                                      ? Image.memory(_pickedImageBytes!, fit: BoxFit.cover)
+                                      ? Image.memory(
+                                          _pickedImageBytes!,
+                                          fit: BoxFit.cover,
+                                        )
                                       : (widget.data['profileImage'] != null &&
-                                              widget.data['profileImage'].toString().isNotEmpty
-                                          ? CachedNetworkImage(
-                                              imageUrl: widget.data['profileImage'],
-                                              fit: BoxFit.cover,
-                                              placeholder: (_, __) => const _AvatarPlaceholder(),
-                                              errorWidget: (_, __, ___) => const _AvatarPlaceholder(),
-                                            )
-                                          : const _AvatarPlaceholder()),
+                                                widget.data['profileImage']
+                                                    .toString()
+                                                    .isNotEmpty
+                                            ? CachedNetworkImage(
+                                                imageUrl:
+                                                    widget.data['profileImage'],
+                                                fit: BoxFit.cover,
+                                                placeholder: (_, __) =>
+                                                    const _AvatarPlaceholder(),
+                                                errorWidget: (_, __, ___) =>
+                                                    const _AvatarPlaceholder(),
+                                              )
+                                            : const _AvatarPlaceholder()),
                                 ),
                               ),
                               Positioned(
@@ -1548,7 +1755,11 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                                     color: Color(0xFF43A047),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1560,7 +1771,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           controller: _nameCtrl,
                           label: 'Full Name',
                           icon: Icons.person_outline,
-                          validator: (v) => (v?.isEmpty ?? true) ? 'Required' : null,
+                          validator: (v) =>
+                              (v?.isEmpty ?? true) ? 'Required' : null,
                         ),
                         const SizedBox(height: 14),
 
@@ -1569,8 +1781,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           label: 'Email',
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
-                          validator: (v) =>
-                              (v?.contains('@') ?? false) ? null : 'Invalid email',
+                          validator: (v) => (v?.contains('@') ?? false)
+                              ? null
+                              : 'Invalid email',
                         ),
                         const SizedBox(height: 14),
 
@@ -1578,7 +1791,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           controller: _titleCtrl,
                           label: 'Eco Title',
                           icon: Icons.eco_outlined,
-                          validator: (v) => (v?.isEmpty ?? true) ? 'Required' : null,
+                          validator: (v) =>
+                              (v?.isEmpty ?? true) ? 'Required' : null,
                         ),
                         const SizedBox(height: 14),
 
@@ -1665,11 +1879,17 @@ class _EcoTextField extends StatelessWidget {
       style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF1B5E20)),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.poppins(color: const Color(0xFF888888), fontSize: 13),
+        labelStyle: GoogleFonts.poppins(
+          color: const Color(0xFF888888),
+          fontSize: 13,
+        ),
         prefixIcon: Icon(icon, color: const Color(0xFF43A047), size: 20),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
